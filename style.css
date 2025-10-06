@@ -738,9 +738,9 @@ select.form-control {
 }
 
 /* END PERPLEXITY DESIGN SYSTEM */
-/* Enhanced Dark Theme Styles with Vocal Isolation Features */
+/* Enhanced Dark Theme Styles with Ultra-Precision Features */
 :root {
-  /* Custom theme overrides for dark teal design */
+  /* Custom theme overrides for precision design */
   --theme-primary: #00F5D4;
   --theme-secondary: #00B4D8;
   --theme-background: #1a1a1a;
@@ -754,6 +754,7 @@ select.form-control {
   --theme-vocal: #FF6B9D;
   --theme-instrumental: #4ADE80;
   --theme-echo: #F59E0B;
+  --theme-precision: #8B5CF6;
   
   /* Animation variables */
   --glow-duration: 2s;
@@ -1080,7 +1081,7 @@ select.form-control {
   font-size: var(--font-size-lg);
 }
 
-/* Enhanced Processing Section with Vocal Features */
+/* Enhanced Processing Section with Precision Features */
 .processing-section {
   background: var(--theme-surface);
   border: 1px solid rgba(0, 245, 212, 0.2);
@@ -1194,23 +1195,23 @@ select.form-control {
   color: var(--theme-text);
 }
 
-/* Vocal Processing Info Section */
-.vocal-processing-info {
-  background: rgba(0, 245, 212, 0.03);
-  border: 1px solid rgba(0, 245, 212, 0.1);
+/* Precision Features Section */
+.precision-features {
+  background: rgba(139, 92, 246, 0.05);
+  border: 1px solid rgba(139, 92, 246, 0.2);
   border-radius: var(--radius-base);
   padding: var(--space-20);
   margin-top: var(--space-24);
 }
 
-.processing-feature {
+.precision-feature {
   display: flex;
   align-items: center;
   gap: var(--space-12);
   margin-bottom: var(--space-16);
 }
 
-.processing-feature:last-child {
+.precision-feature:last-child {
   margin-bottom: 0;
 }
 
@@ -1220,7 +1221,7 @@ select.form-control {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 245, 212, 0.1);
+  background: rgba(139, 92, 246, 0.2);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-lg);
 }
@@ -1231,7 +1232,7 @@ select.form-control {
 
 .feature-text strong {
   display: block;
-  color: var(--theme-primary);
+  color: var(--theme-precision);
   margin-bottom: var(--space-4);
   font-size: var(--font-size-base);
 }
@@ -1241,7 +1242,7 @@ select.form-control {
   font-size: var(--font-size-sm);
 }
 
-/* Enhanced Transcription Preview */
+/* Enhanced Transcription Preview with Precision Analysis */
 .transcription-preview {
   margin-top: var(--space-32);
   padding-top: var(--space-24);
@@ -1254,24 +1255,39 @@ select.form-control {
   font-size: var(--font-size-xl);
 }
 
-.language-detected,
-.explicit-count {
+.analysis-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-16);
+  margin-bottom: var(--space-24);
+}
+
+.metric {
+  background: rgba(0, 245, 212, 0.05);
+  border: 1px solid rgba(0, 245, 212, 0.1);
+  padding: var(--space-16);
+  border-radius: var(--radius-base);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-12);
-  padding: var(--space-12);
-  background: rgba(0, 245, 212, 0.05);
-  border-radius: var(--radius-base);
 }
 
-.language-info {
+.metric-label {
+  color: var(--theme-text-secondary);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
+}
+
+.metric-value {
   display: flex;
   align-items: center;
   gap: var(--space-8);
+  font-weight: var(--font-weight-semibold);
+  color: var(--theme-text);
 }
 
-.confidence {
+.confidence-badge,
+.accuracy-badge {
   background: var(--theme-primary);
   color: var(--theme-background);
   padding: var(--space-2) var(--space-6);
@@ -1280,20 +1296,55 @@ select.form-control {
   font-weight: var(--font-weight-bold);
 }
 
-.label {
-  color: var(--theme-text-secondary);
-  font-weight: var(--font-weight-medium);
+.accuracy-badge {
+  background: var(--theme-precision);
 }
 
-.value {
-  color: var(--theme-text);
-  font-weight: var(--font-weight-semibold);
-}
-
-.transcript-text {
+.transcript-container {
   background: var(--theme-background);
   border: 1px solid rgba(0, 245, 212, 0.2);
   border-radius: var(--radius-base);
+  overflow: hidden;
+}
+
+.transcript-header {
+  background: rgba(0, 245, 212, 0.05);
+  padding: var(--space-16);
+  border-bottom: 1px solid rgba(0, 245, 212, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.transcript-header h5 {
+  margin: 0;
+  color: var(--theme-primary);
+  font-size: var(--font-size-base);
+}
+
+.detection-legend {
+  display: flex;
+  gap: var(--space-12);
+  font-size: var(--font-size-xs);
+}
+
+.legend-item {
+  padding: var(--space-2) var(--space-6);
+  border-radius: var(--radius-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.legend-item.high-confidence {
+  background: rgba(139, 92, 246, 0.2);
+  color: var(--theme-precision);
+}
+
+.legend-item.processed {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--theme-error);
+}
+
+.transcript-text {
   padding: var(--space-16);
   font-family: var(--font-family-mono);
   font-size: var(--font-size-sm);
@@ -1310,7 +1361,18 @@ select.form-control {
   border-radius: var(--radius-sm);
   font-weight: var(--font-weight-bold);
   border: 1px solid rgba(239, 68, 68, 0.4);
+  position: relative;
   animation: highlight 0.5s ease;
+}
+
+.precision-word {
+  background: rgba(139, 92, 246, 0.2);
+  color: var(--theme-precision);
+  padding: var(--space-2) var(--space-6);
+  border-radius: var(--radius-sm);
+  font-weight: var(--font-weight-bold);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  position: relative;
 }
 
 @keyframes highlight {
@@ -1318,7 +1380,7 @@ select.form-control {
   100% { background: rgba(239, 68, 68, 0.2); }
 }
 
-/* Enhanced Preview Section with Vocal Visualization */
+/* Enhanced Preview Section with Precision Visualization */
 .preview-section {
   background: var(--theme-surface);
   border: 1px solid rgba(0, 245, 212, 0.2);
@@ -1408,7 +1470,7 @@ select.form-control {
   border-radius: var(--radius-sm);
 }
 
-.muted-sections {
+.precision-sections {
   position: absolute;
   top: 10px;
   left: 0;
@@ -1416,14 +1478,14 @@ select.form-control {
   height: 35px;
 }
 
-.muted-section {
+.precision-section {
   position: absolute;
   top: 0;
   height: 100%;
-  background: rgba(239, 68, 68, 0.8);
+  background: rgba(139, 92, 246, 0.8);
   border-radius: var(--radius-sm);
-  border: 2px solid var(--theme-error);
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+  border: 2px solid var(--theme-precision);
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
 }
 
 .echo-fills {
@@ -1459,10 +1521,20 @@ select.form-control {
 .playback-info {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-bottom: var(--space-16);
   font-family: var(--font-family-mono);
   font-size: var(--font-size-sm);
   color: var(--theme-text-secondary);
+}
+
+.bpm-display {
+  color: var(--theme-primary);
+  font-weight: var(--font-weight-semibold);
+  background: rgba(0, 245, 212, 0.1);
+  padding: var(--space-4) var(--space-8);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(0, 245, 212, 0.2);
 }
 
 .track-visualization {
@@ -1496,11 +1568,15 @@ select.form-control {
   background: var(--theme-instrumental);
 }
 
+.precision-color {
+  background: var(--theme-precision);
+}
+
 .echo-color {
   background: var(--theme-echo);
 }
 
-.preview-stats {
+.precision-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: var(--space-16);
@@ -1823,8 +1899,12 @@ select.form-control {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--theme-success);
+  background: var(--theme-warning);
   animation: pulse var(--pulse-duration) infinite;
+}
+
+.server-status.online::before {
+  background: var(--theme-success);
 }
 
 .server-status.offline::before {
@@ -2146,7 +2226,7 @@ select.form-control {
     grid-template-columns: 1fr;
   }
   
-  .preview-stats {
+  .precision-stats {
     grid-template-columns: repeat(2, 1fr);
   }
 
@@ -2194,7 +2274,7 @@ select.form-control {
     height: 100px;
   }
 
-  .vocal-track, .instrumental-track, .muted-sections, .echo-fills {
+  .vocal-track, .instrumental-track, .precision-sections, .echo-fills {
     height: 30px;
   }
 
@@ -2204,5 +2284,14 @@ select.form-control {
 
   .instrumental-track {
     bottom: 8px;
+  }
+
+  .analysis-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .playback-info {
+    flex-wrap: wrap;
+    gap: var(--space-8);
   }
 }
