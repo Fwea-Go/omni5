@@ -19,8 +19,8 @@ export default {
     const url = new URL(request.url);
 
     const HETZNER = (env && env.HETZNER_SERVER)
-  ? env.HETZNER_SERVER.replace(/\/$/, '')
-  : 'https://178.156.190.229:8000';
+      ? env.HETZNER_SERVER.replace(/\/$/, '')
+      : 'http://178.156.190.229:8000';
 
     const path = url.pathname;
 
@@ -58,6 +58,9 @@ export default {
 
 // REAL AUDIO PROCESSING with accurate profanity detection
 async function handleRealAudioProcessing(request, env, corsHeaders) {
+  const HETZNER = (env && env.HETZNER_SERVER)
+    ? env.HETZNER_SERVER.replace(/\/$/, '')
+    : 'http://178.156.190.229:8000';
   try {
     const { sessionId } = await request.json();
 
@@ -72,27 +75,11 @@ async function handleRealAudioProcessing(request, env, corsHeaders) {
     sessionData.status = 'processing';
     await env.AUDIO_SESSIONS.put(sessionId, JSON.stringify(sessionData));
 
-    // Get original audio
+    // Get original audio from R2
+    const audioObject = await env.AUDIO_FILES.get(`${sessionId}/original.${sessionData.format}`);
     if (!audioObject) {
-  // Proxy from Hetzner if not found in R2
-  const proxyUrl = `${HETZNER}/download?session=${encodeURIComponent(sessionId)}&type=${encodeURIComponent(type)}`;
-  try {
-    const proxyRes = await fetch(proxyUrl);
-    if (proxyRes.ok) {
-      return new Response(proxyRes.body, {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': proxyRes.headers.get('content-type') || 'application/octet-stream',
-          'Content-Disposition': `attachment; filename="fwea_${type}_${sessionData.fileName}"`
-        }
-      });
+      return errorResponse('Original audio not found in storage', 404, corsHeaders);
     }
-  } catch (e) {
-    console.error('Hetzner proxy download failed:', e);
-  }
-  return errorResponse(`Audio file not found: ${type}`, 404, corsHeaders);
-}
-
     const audioBuffer = await audioObject.arrayBuffer();
 
     // Forward to Hetzner backend for REAL processing
@@ -450,6 +437,9 @@ For support: support@fwea-i.com`;
 
 // Enhanced download with subscription validation
 async function handleDownload(request, env, corsHeaders) {
+  const HETZNER = (env && env.HETZNER_SERVER)
+    ? env.HETZNER_SERVER.replace(/\/$/, '')
+    : 'http://178.156.190.229:8000';
   const url = new URL(request.url);
   const sessionId = url.searchParams.get('session');
   const type = url.searchParams.get('type') || 'clean';
@@ -478,6 +468,21 @@ async function handleDownload(request, env, corsHeaders) {
   const audioObject = await env.AUDIO_FILES.get(`${sessionId}/${fileName}`);
 
   if (!audioObject) {
+    const proxyUrl = `${HETZNER}/download?session=${encodeURIComponent(sessionId)}&type=${encodeURIComponent(type)}`;
+    try {
+      const proxyRes = await fetch(proxyUrl);
+      if (proxyRes.ok) {
+        return new Response(proxyRes.body, {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': proxyRes.headers.get('content-type') || 'application/octet-stream',
+            'Content-Disposition': `attachment; filename="fwea_${type}_${sessionData.fileName}`
+          }
+        });
+      }
+    } catch (e) {
+      console.error('Hetzner proxy download failed:', e);
+    }
     return errorResponse(`Audio file not found: ${type}`, 404, corsHeaders);
   }
 
@@ -492,6 +497,9 @@ async function handleDownload(request, env, corsHeaders) {
 
 // FIXED health check
 async function handleHealthCheck(request, env, corsHeaders) {
+  const HETZNER = (env && env.HETZNER_SERVER)
+    ? env.HETZNER_SERVER.replace(/\/$/, '')
+    : 'http://178.156.190.229:8000';
   try {
     const backendOk = await (async () => {
       try {
@@ -608,6 +616,9 @@ async function handleStatus(request, env, corsHeaders) {
 }
 
 async function handlePreview(request, env, corsHeaders) {
+  const HETZNER = (env && env.HETZNER_SERVER)
+    ? env.HETZNER_SERVER.replace(/\/$/, '')
+    : 'http://178.156.190.229:8000';
   const url = new URL(request.url);
   const sessionId = url.searchParams.get('session');
 
