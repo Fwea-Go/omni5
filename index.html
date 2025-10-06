@@ -5,8 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FWEA-I Omnilingual Clean Version Editor</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
+    <div class="particles-container">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
     <div class="app-container">
         <header class="app-header">
             <h1 class="app-title">FWEA-I OMNILINGUAL CLEAN VERSION EDITOR</h1>
@@ -18,18 +27,28 @@
             <section class="upload-section" id="uploadSection">
                 <div class="drop-zone" id="dropZone">
                     <div class="drop-zone-content">
-                        <div class="upload-icon">🎵</div>
+                        <div class="upload-icon pulse">🎵</div>
                         <h3>Drag & Drop Your Audio File</h3>
                         <p>or <button type="button" class="browse-btn" id="browseBtn">browse files</button></p>
-                        <small>Supports MP3, WAV, M4A, AAC, FLAC (max 100MB)</small>
+                        <small>Supports MP3, WAV, M4A, AAC, FLAC, OGG, WMA (max 100MB)</small>
+                        <div class="format-indicators">
+                            <span class="format">MP3</span>
+                            <span class="format">WAV</span>
+                            <span class="format">M4A</span>
+                            <span class="format">FLAC</span>
+                        </div>
                     </div>
                 </div>
-                <input type="file" id="fileInput" accept=".mp3,.wav,.m4a,.aac,.flac" style="display: none;">
+                <input type="file" id="fileInput" accept=".mp3,.wav,.m4a,.aac,.flac,.ogg,.wma" style="display: none;">
                 
                 <div class="upload-progress hidden" id="uploadProgress">
                     <div class="progress-info">
                         <span class="file-name" id="fileName"></span>
-                        <span class="file-size" id="fileSize"></span>
+                        <div class="file-details">
+                            <span class="file-size" id="fileSize"></span>
+                            <span class="upload-speed" id="uploadSpeed"></span>
+                            <span class="eta" id="uploadEta"></span>
+                        </div>
                     </div>
                     <div class="progress-bar">
                         <div class="progress-fill" id="progressFill"></div>
@@ -42,14 +61,20 @@
             <section class="processing-section hidden" id="processingSection">
                 <div class="processing-status">
                     <h3>Processing Your Audio</h3>
+                    <div class="processing-ring">
+                        <div class="ring-progress" id="processingRing"></div>
+                        <div class="ring-percentage" id="processingPercentage">0%</div>
+                    </div>
+                    <div class="eta-display" id="etaDisplay">Estimating time...</div>
+                    
                     <div class="status-steps">
                         <div class="step active" id="step1">
                             <span class="step-icon">🔄</span>
-                            <span class="step-text">Analyzing audio...</span>
+                            <span class="step-text">Analyzing audio structure...</span>
                         </div>
                         <div class="step" id="step2">
                             <span class="step-icon">🗣️</span>
-                            <span class="step-text">Transcribing content...</span>
+                            <span class="step-text">Transcribing with Whisper AI...</span>
                         </div>
                         <div class="step" id="step3">
                             <span class="step-icon">🔍</span>
@@ -63,10 +88,13 @@
                 </div>
 
                 <div class="transcription-preview hidden" id="transcriptionPreview">
-                    <h4>Transcription & Analysis</h4>
+                    <h4>Real-time Analysis</h4>
                     <div class="language-detected">
                         <span class="label">Detected Language:</span>
-                        <span class="value" id="detectedLanguage">English</span>
+                        <div class="language-info">
+                            <span class="value" id="detectedLanguage">English</span>
+                            <span class="confidence" id="languageConfidence">95%</span>
+                        </div>
                     </div>
                     <div class="explicit-count">
                         <span class="label">Explicit Content Found:</span>
@@ -79,7 +107,7 @@
             <!-- Preview Section -->
             <section class="preview-section hidden" id="previewSection">
                 <div class="preview-header">
-                    <h3>30-Second Preview</h3>
+                    <h3>Audio Preview with Visual Waveform</h3>
                     <p>Listen to your cleaned audio (explicit content muted)</p>
                 </div>
                 
@@ -90,6 +118,7 @@
                     <div class="waveform-container">
                         <div class="waveform" id="waveform">
                             <div class="muted-sections" id="mutedSections"></div>
+                            <div class="playhead" id="playhead"></div>
                         </div>
                     </div>
                     <div class="playback-info">
@@ -107,18 +136,56 @@
                         <div class="stat-value" id="cleanPercentage">100%</div>
                         <div class="stat-label">Clean Content</div>
                     </div>
+                    <div class="stat">
+                        <div class="stat-value" id="processingTime">0s</div>
+                        <div class="stat-label">Processing Time</div>
+                    </div>
+                </div>
+
+                <div class="preview-timeout" id="previewTimeout">
+                    <div class="timeout-bar">
+                        <div class="timeout-fill" id="timeoutFill"></div>
+                    </div>
+                    <p class="timeout-text">Preview expires in <span id="timeoutCountdown">30</span> seconds</p>
                 </div>
             </section>
 
             <!-- Success Section -->
             <section class="success-section hidden" id="successSection">
                 <div class="success-content">
-                    <div class="success-icon">✅</div>
+                    <div class="success-animation">
+                        <div class="success-icon">✅</div>
+                        <div class="success-glow"></div>
+                    </div>
                     <h3>Audio Successfully Cleaned!</h3>
                     <p>Your clean version is ready for download</p>
-                    <button class="btn btn--primary btn--lg" id="downloadBtn">
-                        Download Clean Version
-                    </button>
+                    
+                    <div class="success-stats">
+                        <div class="success-stat">
+                            <span class="stat-number" id="finalMutedCount">0</span>
+                            <span class="stat-desc">Explicit Words Removed</span>
+                        </div>
+                        <div class="success-stat">
+                            <span class="stat-number" id="finalCleanPercent">100%</span>
+                            <span class="stat-desc">Clean Audio</span>
+                        </div>
+                    </div>
+
+                    <div class="success-actions">
+                        <button class="btn btn--primary btn--lg glow" id="downloadBtn">
+                            <span>Download Clean Version</span>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7,10 12,15 17,10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        </button>
+                        
+                        <div class="secondary-actions">
+                            <button class="btn btn--outline" id="processAnotherBtn">Process Another Track</button>
+                            <button class="btn btn--secondary" id="returnHomeBtn">Return to Home</button>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -128,15 +195,26 @@
                     <div class="error-icon">❌</div>
                     <h3>Processing Error</h3>
                     <p id="errorMessage">Something went wrong. Please try again.</p>
-                    <button class="btn btn--outline" id="retryBtn">Try Again</button>
+                    <div class="error-actions">
+                        <button class="btn btn--primary" id="retryBtn">Try Again</button>
+                        <button class="btn btn--outline" id="contactSupportBtn">Contact Support</button>
+                    </div>
                 </div>
             </section>
+
+            <!-- Loading States -->
+            <div class="skeleton-loader hidden" id="skeletonLoader">
+                <div class="skeleton-item"></div>
+                <div class="skeleton-item"></div>
+                <div class="skeleton-item"></div>
+            </div>
         </main>
 
         <footer class="app-footer">
             <div class="footer-content">
                 <div class="footer-info">
                     <p>&copy; 2025 FWEA-I Audio Cleaning. All rights reserved.</p>
+                    <p>Processing Server: <span class="server-status online" id="serverStatus">Online</span></p>
                 </div>
                 <div class="footer-admin">
                     <button type="button" class="admin-unlock" id="adminUnlock">Admin</button>
@@ -145,36 +223,72 @@
         </footer>
     </div>
 
-    <!-- Paywall Modal -->
+    <!-- Payment Modal -->
     <div class="modal hidden" id="paywallModal">
         <div class="modal-overlay" id="paywallOverlay"></div>
-        <div class="modal-content">
+        <div class="modal-content payment-modal">
             <div class="modal-header">
-                <h2>Unlock Full Clean Version</h2>
+                <h2>Choose Your Plan</h2>
                 <button type="button" class="modal-close" id="modalClose">&times;</button>
             </div>
             <div class="modal-body">
-                <p>You've reached the 30-second preview limit. Choose a plan to download your complete clean audio:</p>
+                <p class="payment-description">Unlock the full clean version of your audio file:</p>
                 
                 <div class="pricing-tiers">
                     <div class="tier">
-                        <h3>Single Song</h3>
-                        <div class="price">$2.99</div>
-                        <p>Clean one song</p>
-                        <button type="button" class="btn btn--primary tier-btn" data-tier="single">Choose Plan</button>
+                        <div class="tier-header">
+                            <h3>Single Song</h3>
+                            <div class="price">$2.99</div>
+                        </div>
+                        <div class="tier-features">
+                            <p>✓ Clean one song instantly</p>
+                            <p>✓ High-quality processing</p>
+                            <p>✓ Multiple format support</p>
+                        </div>
+                        <button type="button" class="btn btn--primary tier-btn" data-tier="single" data-price-id="price_1SF2ZGJ2Iq1764pCKiLND2oR">
+                            Choose Plan
+                        </button>
                     </div>
+                    
                     <div class="tier featured">
-                        <h3>Day Pass</h3>
-                        <div class="price">$9.99</div>
-                        <p>Unlimited cleans for 24 hours</p>
-                        <button type="button" class="btn btn--primary tier-btn" data-tier="day">Choose Plan</button>
+                        <div class="tier-badge">Most Popular</div>
+                        <div class="tier-header">
+                            <h3>Day Pass</h3>
+                            <div class="price">$9.99</div>
+                            <small>Best value</small>
+                        </div>
+                        <div class="tier-features">
+                            <p>✓ Unlimited cleans for 24 hours</p>
+                            <p>✓ Priority processing</p>
+                            <p>✓ Batch processing</p>
+                            <p>✓ Advanced language support</p>
+                        </div>
+                        <button type="button" class="btn btn--primary tier-btn glow" data-tier="day" data-price-id="price_1S4NsTJ2Iq1764pCCbru0Aao">
+                            Choose Plan
+                        </button>
                     </div>
+                    
                     <div class="tier">
-                        <h3>Monthly Pro</h3>
-                        <div class="price">$29.99</div>
-                        <p>Unlimited monthly access</p>
-                        <button type="button" class="btn btn--primary tier-btn" data-tier="monthly">Choose Plan</button>
+                        <div class="tier-header">
+                            <h3>Monthly Pro</h3>
+                            <div class="price">$29.99</div>
+                            <small>per month</small>
+                        </div>
+                        <div class="tier-features">
+                            <p>✓ Unlimited monthly access</p>
+                            <p>✓ Priority processing</p>
+                            <p>✓ API access</p>
+                            <p>✓ Custom profanity filters</p>
+                            <p>✓ Analytics dashboard</p>
+                        </div>
+                        <button type="button" class="btn btn--primary tier-btn" data-tier="monthly" data-price-id="price_1SF2fxJ2Iq1764pCe77B6Cuo">
+                            Choose Plan
+                        </button>
                     </div>
+                </div>
+                
+                <div class="payment-security">
+                    <p>🔒 Secured by Stripe • SSL Encrypted • No data stored</p>
                 </div>
             </div>
         </div>
@@ -193,8 +307,24 @@
                     <label class="form-label" for="adminPassword">Password:</label>
                     <input type="password" class="form-control" id="adminPassword" placeholder="Enter admin password">
                 </div>
-                <button type="button" class="btn btn--primary btn--full-width" id="adminSubmit">Unlock</button>
-                <p class="admin-hint">Hint: admin123</p>
+                <button type="button" class="btn btn--primary btn--full-width" id="adminSubmit">Unlock Admin Mode</button>
+                <div class="admin-features">
+                    <small>Admin features: Payment bypass, Usage logs, System monitoring</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Processing Modal -->
+    <div class="modal hidden" id="paymentModal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-small">
+            <div class="modal-body text-center">
+                <div class="payment-spinner">
+                    <div class="spinner"></div>
+                </div>
+                <h3>Processing Payment...</h3>
+                <p>Please wait while we process your payment securely through Stripe.</p>
             </div>
         </div>
     </div>
