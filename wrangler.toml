@@ -1,0 +1,36 @@
+
+name = "omni-clean-5"
+main = "cloudflare-worker.js"
+compatibility_date = "2025-10-05"
+compatibility_flags = ["nodejs_compat"]
+
+[ai]
+binding = "AI"
+
+[vars]
+ENVIRONMENT = "production"
+HETZNER_SERVER = "https://178.156.190.229:8000"
+STRIPE_PUBLISHABLE_KEY = "pk_live_51RW06LJ2Iq1764pCr02p7yLia0VqBgUcRfG7Qm5OWFNAwFZcexIs9iBB3B9s22elcQzQjuAUMBxpeUhwcm8hsDf900NbCbF3Vw"
+
+# Add these as secrets using: wrangler secret put SECRET_NAME
+# STRIPE_SECRET_KEY = "sk_live_..."
+# CF_API_TOKEN = "your-api-token"
+
+[[kv_namespaces]]
+binding = "AUDIO_SESSIONS"
+id = "your-kv-namespace-id"
+preview_id = "your-preview-kv-namespace-id"
+
+[[r2_buckets]]
+binding = "AUDIO_FILES"
+bucket_name = "omni-clean-audio"
+preview_bucket_name = "omni-clean-audio-preview"
+
+[triggers]
+crons = ["0 0 * * *"]  # Daily cleanup of old files
+
+[observability]
+enabled = true
+
+[limits]
+cpu_ms = 50000
