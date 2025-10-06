@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FWEA-I Omnilingual Clean Version Editor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1 class="app-title">FWEA-I OMNILINGUAL CLEAN VERSION EDITOR</h1>
+            <p class="app-subtitle">AI-powered explicit content removal for any language</p>
+        </header>
+
+        <main class="app-main">
+            <!-- File Upload Section -->
+            <section class="upload-section" id="uploadSection">
+                <div class="drop-zone" id="dropZone">
+                    <div class="drop-zone-content">
+                        <div class="upload-icon">🎵</div>
+                        <h3>Drag & Drop Your Audio File</h3>
+                        <p>or <button type="button" class="browse-btn" id="browseBtn">browse files</button></p>
+                        <small>Supports MP3, WAV, M4A, AAC, FLAC (max 100MB)</small>
+                    </div>
+                </div>
+                <input type="file" id="fileInput" accept=".mp3,.wav,.m4a,.aac,.flac" style="display: none;">
+                
+                <div class="upload-progress hidden" id="uploadProgress">
+                    <div class="progress-info">
+                        <span class="file-name" id="fileName"></span>
+                        <span class="file-size" id="fileSize"></span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">0%</div>
+                </div>
+            </section>
+
+            <!-- Processing Section -->
+            <section class="processing-section hidden" id="processingSection">
+                <div class="processing-status">
+                    <h3>Processing Your Audio</h3>
+                    <div class="status-steps">
+                        <div class="step active" id="step1">
+                            <span class="step-icon">🔄</span>
+                            <span class="step-text">Analyzing audio...</span>
+                        </div>
+                        <div class="step" id="step2">
+                            <span class="step-icon">🗣️</span>
+                            <span class="step-text">Transcribing content...</span>
+                        </div>
+                        <div class="step" id="step3">
+                            <span class="step-icon">🔍</span>
+                            <span class="step-text">Detecting explicit content...</span>
+                        </div>
+                        <div class="step" id="step4">
+                            <span class="step-icon">✨</span>
+                            <span class="step-text">Generating clean version...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="transcription-preview hidden" id="transcriptionPreview">
+                    <h4>Transcription & Analysis</h4>
+                    <div class="language-detected">
+                        <span class="label">Detected Language:</span>
+                        <span class="value" id="detectedLanguage">English</span>
+                    </div>
+                    <div class="explicit-count">
+                        <span class="label">Explicit Content Found:</span>
+                        <span class="value" id="explicitCount">0 instances</span>
+                    </div>
+                    <div class="transcript-text" id="transcriptText"></div>
+                </div>
+            </section>
+
+            <!-- Preview Section -->
+            <section class="preview-section hidden" id="previewSection">
+                <div class="preview-header">
+                    <h3>30-Second Preview</h3>
+                    <p>Listen to your cleaned audio (explicit content muted)</p>
+                </div>
+                
+                <div class="audio-player">
+                    <audio controls id="audioPlayer">
+                        Your browser does not support the audio element.
+                    </audio>
+                    <div class="waveform-container">
+                        <div class="waveform" id="waveform">
+                            <div class="muted-sections" id="mutedSections"></div>
+                        </div>
+                    </div>
+                    <div class="playback-info">
+                        <span class="current-time" id="currentTime">0:00</span>
+                        <span class="total-time" id="totalTime">0:30</span>
+                    </div>
+                </div>
+
+                <div class="preview-stats">
+                    <div class="stat">
+                        <div class="stat-value" id="mutedCount">0</div>
+                        <div class="stat-label">Sections Muted</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="cleanPercentage">100%</div>
+                        <div class="stat-label">Clean Content</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Success Section -->
+            <section class="success-section hidden" id="successSection">
+                <div class="success-content">
+                    <div class="success-icon">✅</div>
+                    <h3>Audio Successfully Cleaned!</h3>
+                    <p>Your clean version is ready for download</p>
+                    <button class="btn btn--primary btn--lg" id="downloadBtn">
+                        Download Clean Version
+                    </button>
+                </div>
+            </section>
+
+            <!-- Error Section -->
+            <section class="error-section hidden" id="errorSection">
+                <div class="error-content">
+                    <div class="error-icon">❌</div>
+                    <h3>Processing Error</h3>
+                    <p id="errorMessage">Something went wrong. Please try again.</p>
+                    <button class="btn btn--outline" id="retryBtn">Try Again</button>
+                </div>
+            </section>
+        </main>
+
+        <footer class="app-footer">
+            <div class="footer-content">
+                <div class="footer-info">
+                    <p>&copy; 2025 FWEA-I Audio Cleaning. All rights reserved.</p>
+                </div>
+                <div class="footer-admin">
+                    <button type="button" class="admin-unlock" id="adminUnlock">Admin</button>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Paywall Modal -->
+    <div class="modal hidden" id="paywallModal">
+        <div class="modal-overlay" id="paywallOverlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Unlock Full Clean Version</h2>
+                <button type="button" class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>You've reached the 30-second preview limit. Choose a plan to download your complete clean audio:</p>
+                
+                <div class="pricing-tiers">
+                    <div class="tier">
+                        <h3>Single Song</h3>
+                        <div class="price">$2.99</div>
+                        <p>Clean one song</p>
+                        <button type="button" class="btn btn--primary tier-btn" data-tier="single">Choose Plan</button>
+                    </div>
+                    <div class="tier featured">
+                        <h3>Day Pass</h3>
+                        <div class="price">$9.99</div>
+                        <p>Unlimited cleans for 24 hours</p>
+                        <button type="button" class="btn btn--primary tier-btn" data-tier="day">Choose Plan</button>
+                    </div>
+                    <div class="tier">
+                        <h3>Monthly Pro</h3>
+                        <div class="price">$29.99</div>
+                        <p>Unlimited monthly access</p>
+                        <button type="button" class="btn btn--primary tier-btn" data-tier="monthly">Choose Plan</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Modal -->
+    <div class="modal hidden" id="adminModal">
+        <div class="modal-overlay" id="adminOverlay"></div>
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h3>Admin Access</h3>
+                <button type="button" class="modal-close" id="adminModalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label" for="adminPassword">Password:</label>
+                    <input type="password" class="form-control" id="adminPassword" placeholder="Enter admin password">
+                </div>
+                <button type="button" class="btn btn--primary btn--full-width" id="adminSubmit">Unlock</button>
+                <p class="admin-hint">Hint: admin123</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
