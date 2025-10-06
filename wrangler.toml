@@ -1,4 +1,4 @@
-name = "omni-clean-5"
+name = "omni-clean-5-final"
 main = "fwea-final-worker.js" 
 compatibility_date = "2025-10-06"
 compatibility_flags = ["nodejs_compat"]
@@ -8,7 +8,7 @@ binding = "AI"
 
 [vars]
 ENVIRONMENT = "production"
-HETZNER_SERVER = "https://178.156.190.229:8000"
+HETZNER_SERVER = "http://178.156.190.229:8000"
 STRIPE_PUBLISHABLE_KEY = "pk_live_51RW06LJ2Iq1764pCr02p7yLia0VqBgUcRfG7Qm5OWFNAwFZcexIs9iBB3B9s22elcQzQjuAUMBxpeUhwcm8hsDf900NbCbF3Vw"
 
 # Add these as secrets using: wrangler secret put SECRET_NAME
@@ -17,7 +17,7 @@ STRIPE_PUBLISHABLE_KEY = "pk_live_51RW06LJ2Iq1764pCr02p7yLia0VqBgUcRfG7Qm5OWFNAw
 
 [[kv_namespaces]]
 binding = "AUDIO_SESSIONS"
-id = "6a64a5d1cb7b4ac5bcaefaec65129a66"
+id = "6a64a5d1cb7b4ac5bcaefaec65129a60"
 preview_id = "your-preview-kv-namespace-id"
 
 [[r2_buckets]]
