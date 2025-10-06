@@ -17,7 +17,7 @@ STRIPE_PUBLISHABLE_KEY = "pk_live_51RW06LJ2Iq1764pCr02p7yLia0VqBgUcRfG7Qm5OWFNAw
 
 [[kv_namespaces]]
 binding = "AUDIO_SESSIONS"
-id = "6a64a5d1cb7b4ac5bcaefaec65129a60"
+id = "6a64a5d1cb7b4ac5bcaefaec65129a66"
 preview_id = "your-preview-kv-namespace-id"
 
 [[r2_buckets]]
