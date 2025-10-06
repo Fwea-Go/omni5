@@ -738,7 +738,7 @@ select.form-control {
 }
 
 /* END PERPLEXITY DESIGN SYSTEM */
-/* Enhanced Dark Theme Styles */
+/* Enhanced Dark Theme Styles with Vocal Isolation Features */
 :root {
   /* Custom theme overrides for dark teal design */
   --theme-primary: #00F5D4;
@@ -751,6 +751,9 @@ select.form-control {
   --theme-error: #EF4444;
   --theme-text: #ffffff;
   --theme-text-secondary: #a0a0a0;
+  --theme-vocal: #FF6B9D;
+  --theme-instrumental: #4ADE80;
+  --theme-echo: #F59E0B;
   
   /* Animation variables */
   --glow-duration: 2s;
@@ -941,6 +944,17 @@ select.form-control {
   animation: pulse var(--pulse-duration) ease-in-out infinite;
 }
 
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
 .format-indicators {
   display: flex;
   justify-content: center;
@@ -1066,7 +1080,7 @@ select.form-control {
   font-size: var(--font-size-lg);
 }
 
-/* Enhanced Processing Section */
+/* Enhanced Processing Section with Vocal Features */
 .processing-section {
   background: var(--theme-surface);
   border: 1px solid rgba(0, 245, 212, 0.2);
@@ -1136,6 +1150,7 @@ select.form-control {
 .status-steps {
   display: grid;
   gap: var(--space-16);
+  margin-bottom: var(--space-32);
 }
 
 .step {
@@ -1177,6 +1192,53 @@ select.form-control {
 .step-text {
   font-weight: var(--font-weight-medium);
   color: var(--theme-text);
+}
+
+/* Vocal Processing Info Section */
+.vocal-processing-info {
+  background: rgba(0, 245, 212, 0.03);
+  border: 1px solid rgba(0, 245, 212, 0.1);
+  border-radius: var(--radius-base);
+  padding: var(--space-20);
+  margin-top: var(--space-24);
+}
+
+.processing-feature {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  margin-bottom: var(--space-16);
+}
+
+.processing-feature:last-child {
+  margin-bottom: 0;
+}
+
+.feature-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 245, 212, 0.1);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-lg);
+}
+
+.feature-text {
+  flex: 1;
+}
+
+.feature-text strong {
+  display: block;
+  color: var(--theme-primary);
+  margin-bottom: var(--space-4);
+  font-size: var(--font-size-base);
+}
+
+.feature-text span {
+  color: var(--theme-text-secondary);
+  font-size: var(--font-size-sm);
 }
 
 /* Enhanced Transcription Preview */
@@ -1256,7 +1318,7 @@ select.form-control {
   100% { background: rgba(239, 68, 68, 0.2); }
 }
 
-/* Enhanced Preview Section */
+/* Enhanced Preview Section with Vocal Visualization */
 .preview-section {
   background: var(--theme-surface);
   border: 1px solid rgba(0, 245, 212, 0.2);
@@ -1293,42 +1355,93 @@ select.form-control {
 
 .waveform-container {
   position: relative;
-  height: 80px;
-  background: rgba(0, 245, 212, 0.1);
+  height: 120px;
+  background: rgba(0, 245, 212, 0.05);
   border-radius: var(--radius-base);
   overflow: hidden;
   border: 2px solid rgba(0, 245, 212, 0.3);
+  margin-bottom: var(--space-16);
 }
 
 .waveform {
   position: relative;
   height: 100%;
   background: linear-gradient(90deg, 
-    rgba(0, 245, 212, 0.4) 0%,
-    rgba(0, 245, 212, 0.8) 20%,
-    rgba(0, 245, 212, 0.6) 40%,
-    rgba(0, 245, 212, 0.9) 60%,
-    rgba(0, 245, 212, 0.7) 80%,
-    rgba(0, 245, 212, 0.5) 100%
+    rgba(0, 245, 212, 0.3) 0%,
+    rgba(0, 245, 212, 0.6) 20%,
+    rgba(0, 245, 212, 0.4) 40%,
+    rgba(0, 245, 212, 0.7) 60%,
+    rgba(0, 245, 212, 0.5) 80%,
+    rgba(0, 245, 212, 0.4) 100%
   );
+}
+
+.vocal-track {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  right: 0;
+  height: 35px;
+  background: linear-gradient(90deg, 
+    rgba(255, 107, 157, 0.6) 0%,
+    rgba(255, 107, 157, 0.8) 25%,
+    rgba(255, 107, 157, 0.5) 50%,
+    rgba(255, 107, 157, 0.9) 75%,
+    rgba(255, 107, 157, 0.7) 100%
+  );
+  border-radius: var(--radius-sm);
+}
+
+.instrumental-track {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+  height: 35px;
+  background: linear-gradient(90deg, 
+    rgba(74, 222, 128, 0.6) 0%,
+    rgba(74, 222, 128, 0.8) 25%,
+    rgba(74, 222, 128, 0.5) 50%,
+    rgba(74, 222, 128, 0.9) 75%,
+    rgba(74, 222, 128, 0.7) 100%
+  );
+  border-radius: var(--radius-sm);
 }
 
 .muted-sections {
   position: absolute;
-  top: 0;
+  top: 10px;
   left: 0;
   right: 0;
-  bottom: 0;
+  height: 35px;
 }
 
 .muted-section {
   position: absolute;
-  top: 5px;
-  bottom: 5px;
-  background: rgba(239, 68, 68, 0.7);
+  top: 0;
+  height: 100%;
+  background: rgba(239, 68, 68, 0.8);
   border-radius: var(--radius-sm);
   border: 2px solid var(--theme-error);
   box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+}
+
+.echo-fills {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  right: 0;
+  height: 35px;
+}
+
+.echo-fill {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: rgba(245, 158, 11, 0.7);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--theme-echo);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
 }
 
 .playhead {
@@ -1340,15 +1453,51 @@ select.form-control {
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
   left: 0;
   transition: left 0.1s ease;
+  z-index: 10;
 }
 
 .playback-info {
   display: flex;
   justify-content: space-between;
-  margin-top: var(--space-12);
+  margin-bottom: var(--space-16);
   font-family: var(--font-family-mono);
   font-size: var(--font-size-sm);
   color: var(--theme-text-secondary);
+}
+
+.track-visualization {
+  display: flex;
+  gap: var(--space-16);
+  padding: var(--space-12);
+  background: rgba(0, 245, 212, 0.03);
+  border-radius: var(--radius-base);
+  flex-wrap: wrap;
+}
+
+.track-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  font-size: var(--font-size-sm);
+  color: var(--theme-text-secondary);
+}
+
+.track-color {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-sm);
+}
+
+.vocal-color {
+  background: var(--theme-vocal);
+}
+
+.instrumental-color {
+  background: var(--theme-instrumental);
+}
+
+.echo-color {
+  background: var(--theme-echo);
 }
 
 .preview-stats {
@@ -1998,7 +2147,7 @@ select.form-control {
   }
   
   .preview-stats {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .success-stats {
@@ -2034,5 +2183,26 @@ select.form-control {
   .progress-info {
     flex-direction: column;
     gap: var(--space-8);
+  }
+
+  .track-visualization {
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .waveform-container {
+    height: 100px;
+  }
+
+  .vocal-track, .instrumental-track, .muted-sections, .echo-fills {
+    height: 30px;
+  }
+
+  .vocal-track {
+    top: 8px;
+  }
+
+  .instrumental-track {
+    bottom: 8px;
   }
 }
