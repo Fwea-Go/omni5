@@ -1,6 +1,6 @@
 // Application Data
 const CONFIG = {
-    hetznerBackendUrl: "https://your-server-ip:8000",
+    hetznerBackendUrl: "https://178.156.190.229:8000",
     cloudflareAccountId: "94ad1fffaa41132c2ff517ce46f76692",
     supportedFormats: ["mp3", "wav", "m4a", "aac", "flac"],
     maxFileSize: 100000000, // 100MB
