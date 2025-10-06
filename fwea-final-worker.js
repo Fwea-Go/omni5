@@ -17,6 +17,11 @@ export default {
     }
 
     const url = new URL(request.url);
+
+    const HETZNER = (env && env.HETZNER_SERVER)
+  ? env.HETZNER_SERVER.replace(/\/$/, '')
+  : 'https://178.156.190.229:8000';
+
     const path = url.pathname;
 
     console.log(`[${new Date().toISOString()}] FINAL ${request.method} ${path}`);
@@ -68,16 +73,31 @@ async function handleRealAudioProcessing(request, env, corsHeaders) {
     await env.AUDIO_SESSIONS.put(sessionId, JSON.stringify(sessionData));
 
     // Get original audio
-    const audioObject = await env.AUDIO_FILES.get(`${sessionId}/original.${sessionData.format}`);
     if (!audioObject) {
-      return errorResponse('Original audio not found', 404, corsHeaders);
+  // Proxy from Hetzner if not found in R2
+  const proxyUrl = `${HETZNER}/download?session=${encodeURIComponent(sessionId)}&type=${encodeURIComponent(type)}`;
+  try {
+    const proxyRes = await fetch(proxyUrl);
+    if (proxyRes.ok) {
+      return new Response(proxyRes.body, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': proxyRes.headers.get('content-type') || 'application/octet-stream',
+          'Content-Disposition': `attachment; filename="fwea_${type}_${sessionData.fileName}"`
+        }
+      });
     }
+  } catch (e) {
+    console.error('Hetzner proxy download failed:', e);
+  }
+  return errorResponse(`Audio file not found: ${type}`, 404, corsHeaders);
+}
 
     const audioBuffer = await audioObject.arrayBuffer();
 
     // Forward to Hetzner backend for REAL processing
     try {
-      const hetznerResponse = await fetch('https://178.156.190.229:8000/process', {
+      const hetznerResponse = await fetch(`${HETZNER}/process`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -473,11 +493,19 @@ async function handleDownload(request, env, corsHeaders) {
 // FIXED health check
 async function handleHealthCheck(request, env, corsHeaders) {
   try {
+    const backendOk = await (async () => {
+      try {
+        const r = await fetch(`${HETZNER}/health`, { signal: AbortSignal.timeout(3000) });
+        return r.ok;
+      } catch (_) { return false; }
+    })();
+
     return successResponse({
       status: 'online',
       service: 'FWEA-I Final Clean Audio Editor',
       version: '1.0.0-final',
       timestamp: new Date().toISOString(),
+      backend_reachable: backendOk,
       features: {
         real_audio_processing: true,
         stripe_payments: true,
@@ -487,7 +515,7 @@ async function handleHealthCheck(request, env, corsHeaders) {
         subscription_tiers: ['single', 'day', 'monthly']
       },
       stripe_integration: 'active',
-      hetzner_backend: 'connected'
+      hetzner_backend: backendOk ? 'connected' : 'unreachable'
     }, corsHeaders);
   } catch (error) {
     return errorResponse('Health check failed', 500, corsHeaders);
@@ -587,13 +615,39 @@ async function handlePreview(request, env, corsHeaders) {
     return errorResponse('Session ID required', 400, corsHeaders);
   }
 
-  // Mock preview for development
-  return new Response('Mock audio preview data', {
-    headers: {
-      ...corsHeaders,
-      'Content-Type': 'audio/mpeg',
-      'Content-Disposition': 'inline'
-    }
+  // 1) Try R2 first
+  const r2Object = await env.AUDIO_FILES.get(`${sessionId}/preview.mp3`);
+  if (r2Object) {
+    return new Response(r2Object.body, {
+      headers: { ...corsHeaders, 'Content-Type': 'audio/mpeg', 'Content-Disposition': 'inline' }
+    });
+  }
+
+  // 2) Proxy from Hetzner backend if R2 miss
+  const candidates = [
+    `${HETZNER}/preview?session=${encodeURIComponent(sessionId)}`,
+    `${HETZNER}/download/preview?session=${encodeURIComponent(sessionId)}`
+  ];
+
+  for (const u of candidates) {
+    try {
+      const res = await fetch(u);
+      if (res.ok) {
+        return new Response(res.body, {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': res.headers.get('content-type') || 'audio/mpeg',
+            'Content-Disposition': 'inline'
+          }
+        });
+      }
+    } catch (_) {}
+  }
+
+  // 3) Fallback
+  return new Response('Preview unavailable', {
+    headers: { ...corsHeaders, 'Content-Type': 'text/plain' },
+    status: 404
   });
 }
 
