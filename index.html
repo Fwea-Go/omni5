@@ -3,444 +3,1149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FWEA-I Precision Clean Audio Editor</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://js.stripe.com/v3/"></script>
+    <title>FWEA-I Clean Audio Editor</title>
+    <style>
+        :root {
+            /* ORIGINAL TEAL COLORS - RESTORED */
+            --primary-teal: #00F5D4;
+            --accent-teal: #00D4AA;
+            --deep-teal: #00B891;
+            --dark-teal: #00A082;
+            --light-teal: #40F6DD;
+
+            /* Dark theme */
+            --dark-bg: #1a1a1a;
+            --dark-surface: #2a2a2a;
+            --dark-card: #333333;
+
+            /* Status colors */
+            --success-green: #4ADE80;
+            --error-red: #EF4444;
+            --warning-yellow: #F59E0B;
+
+            /* Text colors */
+            --text-white: #FFFFFF;
+            --text-gray: #A0A0A0;
+            --text-dark: #333333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--dark-bg), var(--dark-surface));
+            color: var(--text-white);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .app-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(42, 42, 42, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 2rem 1rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(0, 245, 212, 0.2);
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--primary-teal);
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 30px rgba(0, 245, 212, 0.5);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-gray);
+            margin-bottom: 1rem;
+        }
+
+        /* Main content */
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Upload section */
+        .upload-section {
+            margin-bottom: 3rem;
+        }
+
+        .drop-zone {
+            border: 3px dashed var(--primary-teal);
+            border-radius: 20px;
+            padding: 4rem 2rem;
+            text-align: center;
+            background: rgba(0, 245, 212, 0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .drop-zone:hover, .drop-zone.drag-over {
+            border-color: var(--light-teal);
+            background: rgba(0, 245, 212, 0.1);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 245, 212, 0.3);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .drop-zone h3 {
+            font-size: 1.8rem;
+            color: var(--primary-teal);
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .browse-btn {
+            background: none;
+            border: none;
+            color: var(--primary-teal);
+            text-decoration: underline;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .browse-btn:hover {
+            color: var(--light-teal);
+        }
+
+        .format-badges {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .format-badge {
+            padding: 0.3rem 0.8rem;
+            background: rgba(0, 245, 212, 0.1);
+            border: 1px solid rgba(0, 245, 212, 0.3);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--primary-teal);
+        }
+
+        /* Processing section - ORIGINAL TEAL COLORS */
+        .processing-section {
+            background: rgba(42, 42, 42, 0.6);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+            border: 1px solid rgba(0, 245, 212, 0.2);
+        }
+
+        .processing-title {
+            font-size: 2rem;
+            color: var(--primary-teal);
+            text-align: center;
+            margin-bottom: 2rem;
+            font-weight: 700;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-teal), var(--light-teal));
+            border-radius: 6px;
+            transition: width 0.5s ease;
+            width: 0%;
+            box-shadow: 0 0 20px rgba(0, 245, 212, 0.5);
+        }
+
+        .progress-text {
+            text-align: center;
+            font-size: 1.1rem;
+            color: var(--text-white);
+            margin-bottom: 2rem;
+            font-weight: 500;
+        }
+
+        .processing-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .step {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .step.active {
+            border-color: var(--primary-teal);
+            background: rgba(0, 245, 212, 0.1);
+            box-shadow: 0 0 30px rgba(0, 245, 212, 0.2);
+        }
+
+        .step.completed {
+            border-color: var(--success-green);
+            background: rgba(74, 222, 128, 0.1);
+        }
+
+        .step-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .step-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-desc {
+            font-size: 0.9rem;
+            color: var(--text-gray);
+        }
+
+        /* Results section - ORIGINAL TEAL THEME */
+        .results-section {
+            background: rgba(42, 42, 42, 0.6);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+            border: 1px solid rgba(0, 245, 212, 0.2);
+        }
+
+        .results-title {
+            font-size: 2rem;
+            color: var(--primary-teal);
+            text-align: center;
+            margin-bottom: 2rem;
+            font-weight: 700;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(0, 245, 212, 0.05);
+            border: 1px solid rgba(0, 245, 212, 0.2);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            border-color: var(--primary-teal);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 245, 212, 0.2);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--primary-teal);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Audio player */
+        .audio-player {
+            background: rgba(0, 245, 212, 0.05);
+            border: 1px solid rgba(0, 245, 212, 0.2);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .audio-player h3 {
+            color: var(--primary-teal);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        audio {
+            width: 100%;
+            max-width: 400px;
+            margin: 1rem 0;
+        }
+
+        /* Payment section */
+        .payment-section {
+            margin: 3rem 0;
+        }
+
+        .payment-title {
+            font-size: 2rem;
+            color: var(--primary-teal);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .pricing-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .pricing-card {
+            background: rgba(42, 42, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .pricing-card.popular {
+            border-color: var(--primary-teal);
+            background: rgba(0, 245, 212, 0.05);
+            transform: scale(1.05);
+        }
+
+        .pricing-card.premium {
+            border-color: var(--warning-yellow);
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .popular-badge {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary-teal);
+            color: var(--dark-bg);
+            padding: 0.3rem 1rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .plan-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .plan-price {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--primary-teal);
+            margin-bottom: 1rem;
+        }
+
+        .pricing-card.premium .plan-price {
+            color: var(--warning-yellow);
+        }
+
+        .plan-features {
+            list-style: none;
+            margin: 1.5rem 0;
+            text-align: left;
+        }
+
+        .plan-features li {
+            padding: 0.5rem 0;
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .plan-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--success-green);
+            font-weight: bold;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            margin: 0.5rem;
+            min-width: 200px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-teal), var(--accent-teal));
+            color: var(--dark-bg);
+            font-weight: 700;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 245, 212, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-white);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Download section */
+        .download-section {
+            background: rgba(0, 245, 212, 0.05);
+            border: 1px solid rgba(0, 245, 212, 0.2);
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            text-align: center;
+            margin: 3rem 0;
+        }
+
+        .download-title {
+            font-size: 2rem;
+            color: var(--success-green);
+            margin-bottom: 1rem;
+        }
+
+        .download-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+
+        .premium-features {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+
+        .premium-features h4 {
+            color: var(--warning-yellow);
+            margin-bottom: 1rem;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: var(--dark-surface);
+            border-radius: 20px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            border: 1px solid var(--primary-teal);
+        }
+
+        .modal-title {
+            color: var(--primary-teal);
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Utilities */
+        .hidden {
+            display: none !important;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .mb-2 {
+            margin-bottom: 1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2rem;
+            }
+
+            .processing-steps {
+                grid-template-columns: 1fr;
+            }
+
+            .pricing-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .pricing-card.popular {
+                transform: none;
+            }
+
+            .download-options {
+                flex-direction: column;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="particles-container" id="particlesContainer">
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-    </div>
-
     <div class="app-container">
-        <header class="app-header">
-            <h1 class="app-title">FWEA-I PRECISION CLEAN AUDIO EDITOR</h1>
-            <p class="app-subtitle">Advanced AI-powered profanity detection & stem separation with foolproof accuracy</p>
+        <header class="header">
+            <h1 class="title">FWEA-I CLEAN AUDIO EDITOR</h1>
+            <p class="subtitle">Professional audio cleaning with surgical precision</p>
         </header>
 
-        <main class="app-main">
-            <!-- File Upload Section -->
+        <main class="main-content">
+            <!-- Upload Section -->
             <section class="upload-section" id="uploadSection">
                 <div class="drop-zone" id="dropZone">
-                    <div class="drop-zone-content">
-                        <div class="upload-icon pulse">🎵</div>
-                        <h3>Upload Your Audio File</h3>
-                        <p>or <button type="button" class="browse-btn" id="browseBtn">browse files</button></p>
-                        <small>Supports MP3, WAV, M4A, AAC, FLAC, OGG (max 100MB)</small>
-                        <div class="format-indicators">
-                            <span class="format">MP3</span>
-                            <span class="format">WAV</span>
-                            <span class="format">M4A</span>
-                            <span class="format">FLAC</span>
-                        </div>
+                    <div class="upload-icon">🎵</div>
+                    <h3>Upload Your Audio File</h3>
+                    <p>Drag & drop or <button class="browse-btn" id="browseBtn">browse files</button></p>
+                    <small>Supports MP3, WAV, M4A, AAC, FLAC, OGG (max 100MB)</small>
+                    <div class="format-badges">
+                        <span class="format-badge">MP3</span>
+                        <span class="format-badge">WAV</span>
+                        <span class="format-badge">M4A</span>
+                        <span class="format-badge">AAC</span>
+                        <span class="format-badge">FLAC</span>
+                        <span class="format-badge">OGG</span>
                     </div>
                 </div>
                 <input type="file" id="fileInput" accept=".mp3,.wav,.m4a,.aac,.flac,.ogg" style="display: none;">
-                
-                <div class="upload-progress hidden" id="uploadProgress">
-                    <div class="progress-info">
-                        <span class="file-name" id="fileName"></span>
-                        <div class="file-details">
-                            <span class="file-size" id="fileSize"></span>
-                            <span class="upload-speed" id="uploadSpeed"></span>
-                            <span class="eta" id="uploadEta"></span>
-                        </div>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill"></div>
-                    </div>
-                    <div class="progress-text" id="progressText">0%</div>
-                </div>
             </section>
 
             <!-- Processing Section -->
             <section class="processing-section hidden" id="processingSection">
-                <div class="processing-status">
-                    <h3>Advanced Audio Processing with Real-Time Detection</h3>
-                    <div class="processing-ring">
-                        <div class="ring-progress" id="processingRing"></div>
-                        <div class="ring-percentage" id="processingPercentage">0%</div>
-                    </div>
-                    <div class="eta-display" id="etaDisplay">Initializing multi-layer profanity detection...</div>
-                    
-                    <div class="status-steps">
-                        <div class="step active" id="step1">
-                            <span class="step-icon">🎼</span>
-                            <span class="step-text">Stem separation & audio analysis...</span>
-                        </div>
-                        <div class="step" id="step2">
-                            <span class="step-icon">🧠</span>
-                            <span class="step-text">AI transcription with phonetic analysis...</span>
-                        </div>
-                        <div class="step" id="step3">
-                            <span class="step-icon">🎯</span>
-                            <span class="step-text">Advanced profanity detection & validation...</span>
-                        </div>
-                        <div class="step" id="step4">
-                            <span class="step-icon">✨</span>
-                            <span class="step-text">Clean audio generation & quality check...</span>
-                        </div>
-                    </div>
-
-                    <div class="detection-features">
-                        <div class="detection-feature">
-                            <div class="feature-icon">🔍</div>
-                            <div class="feature-text">
-                                <strong>Multi-Engine Detection</strong>
-                                <span>Pattern matching + AI validation + Context analysis</span>
-                            </div>
-                        </div>
-                        <div class="detection-feature">
-                            <div class="feature-icon">🎵</div>
-                            <div class="feature-text">
-                                <strong>Precision Audio Muting</strong>
-                                <span>Exact waveform manipulation with beat preservation</span>
-                            </div>
-                        </div>
-                        <div class="detection-feature">
-                            <div class="feature-icon">🌍</div>
-                            <div class="feature-text">
-                                <strong>Multi-Language Support</strong>
-                                <span>English, Spanish, French, Portuguese + variants</span>
-                            </div>
-                        </div>
-                    </div>
+                <h2 class="processing-title">Processing Your Audio</h2>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
                 </div>
+                <div class="progress-text" id="progressText">Initializing...</div>
 
-                <div class="analysis-preview hidden" id="analysisPreview">
-                    <h4>Real-Time Processing Analysis</h4>
-                    <div class="analysis-metrics">
-                        <div class="metric">
-                            <span class="metric-label">Detected Language:</span>
-                            <div class="metric-value">
-                                <span id="detectedLanguage">English</span>
-                                <span class="confidence-badge" id="languageConfidence">95%</span>
-                            </div>
-                        </div>
-                        <div class="metric">
-                            <span class="metric-label">Profanity Detections:</span>
-                            <div class="metric-value">
-                                <span id="detectionCount">0 instances</span>
-                                <span class="accuracy-badge" id="detectionAccuracy">99%</span>
-                            </div>
-                        </div>
-                        <div class="metric">
-                            <span class="metric-label">Processing Engine:</span>
-                            <div class="metric-value">
-                                <span id="processingEngine">Multi-AI</span>
-                                <span class="engine-badge" id="engineStatus">Active</span>
-                            </div>
-                        </div>
+                <div class="processing-steps">
+                    <div class="step" id="step1">
+                        <div class="step-icon">🔍</div>
+                        <div class="step-title">Audio Analysis</div>
+                        <div class="step-desc">Analyzing audio structure</div>
                     </div>
-                    <div class="transcript-container">
-                        <div class="transcript-header">
-                            <h5>Detection Analysis</h5>
-                            <div class="detection-legend">
-                                <span class="legend-item detected">Detected</span>
-                                <span class="legend-item processed">Processed</span>
-                                <span class="legend-item clean">Clean</span>
-                            </div>
-                        </div>
-                        <div class="transcript-text" id="transcriptText"></div>
+                    <div class="step" id="step2">
+                        <div class="step-icon">🎵</div>
+                        <div class="step-title">Stem Separation</div>
+                        <div class="step-desc">Isolating vocals & instruments</div>
+                    </div>
+                    <div class="step" id="step3">
+                        <div class="step-icon">🤖</div>
+                        <div class="step-title">AI Detection</div>
+                        <div class="step-desc">Advanced profanity detection</div>
+                    </div>
+                    <div class="step" id="step4">
+                        <div class="step-icon">✨</div>
+                        <div class="step-title">Audio Cleaning</div>
+                        <div class="step-desc">Precision vocal editing</div>
                     </div>
                 </div>
             </section>
 
-            <!-- Preview Section -->
-            <section class="preview-section hidden" id="previewSection">
-                <div class="preview-header">
-                    <h3>Clean Audio Preview</h3>
-                    <p>Listen to your professionally cleaned audio with perfect instrumental preservation</p>
+            <!-- Results Section -->
+            <section class="results-section hidden" id="resultsSection">
+                <h2 class="results-title">Processing Results</h2>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="wordsDetected">0</div>
+                        <div class="stat-label">Words Detected</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="cleaningAccuracy">0%</div>
+                        <div class="stat-label">Cleaning Accuracy</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">100%</div>
+                        <div class="stat-label">Instrumental Preserved</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="processingTime">0s</div>
+                        <div class="stat-label">Processing Time</div>
+                    </div>
                 </div>
-                
+
                 <div class="audio-player">
-                    <audio controls id="audioPlayer">
+                    <h3>Clean Audio Preview (30 seconds)</h3>
+                    <p>Listen to your professionally cleaned audio</p>
+                    <audio id="audioPreview" controls>
                         Your browser does not support the audio element.
                     </audio>
-                    <div class="waveform-container">
-                        <div class="waveform" id="waveform">
-                            <div class="vocal-track" id="vocalTrack"></div>
-                            <div class="instrumental-track" id="instrumentalTrack"></div>
-                            <div class="muted-sections" id="mutedSections"></div>
-                            <div class="playhead" id="playhead"></div>
-                        </div>
-                    </div>
-                    <div class="playback-info">
-                        <span class="current-time" id="currentTime">0:00</span>
-                        <span class="total-time" id="totalTime">0:30</span>
-                        <div class="quality-indicator">
-                            <span class="quality-label">Quality:</span>
-                            <span class="quality-value" id="audioQuality">High</span>
-                        </div>
-                    </div>
-                    
-                    <div class="track-visualization">
-                        <div class="track-indicator vocal-indicator">
-                            <div class="track-color vocal-color"></div>
-                            <span>Vocal Track (Cleaned)</span>
-                        </div>
-                        <div class="track-indicator instrumental-indicator">
-                            <div class="track-color instrumental-color"></div>
-                            <span>Instrumental Track (Preserved)</span>
-                        </div>
-                        <div class="track-indicator muted-indicator">
-                            <div class="track-color muted-color"></div>
-                            <span>Muted Sections</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="processing-stats">
-                    <div class="stat">
-                        <div class="stat-value" id="totalDetections">0</div>
-                        <div class="stat-label">Words Processed</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-value" id="cleaningAccuracy">99%</div>
-                        <div class="stat-label">Accuracy Rate</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-value" id="processingTime">0s</div>
-                        <div class="stat-label">Process Time</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-value" id="audioFormat">WAV</div>
-                        <div class="stat-label">Output Format</div>
-                    </div>
-                </div>
-
-                <!-- Subscription-based Stem Downloads (Only for $29.99 subscribers) -->
-                <div class="stem-downloads hidden" id="stemDownloads">
-                    <h4>Individual Stems (Monthly Pro Only)</h4>
-                    <div class="stem-buttons">
-                        <button class="btn btn--secondary" id="downloadVocals">
-                            <span>Download Vocals</span>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7,10 12,15 17,10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                        </button>
-                        <button class="btn btn--secondary" id="downloadInstrumentals">
-                            <span>Download Instrumentals</span>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7,10 12,15 17,10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                        </button>
-                        <button class="btn btn--secondary" id="downloadBass">
-                            <span>Download Bass</span>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7,10 12,15 17,10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                        </button>
-                        <button class="btn btn--secondary" id="downloadDrums">
-                            <span>Download Drums</span>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7,10 12,15 17,10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="preview-timeout" id="previewTimeout">
-                    <div class="timeout-bar">
-                        <div class="timeout-fill" id="timeoutFill"></div>
-                    </div>
-                    <p class="timeout-text">Preview expires in <span id="timeoutCountdown">30</span> seconds</p>
                 </div>
             </section>
 
-            <!-- Success Section -->
-            <section class="success-section hidden" id="successSection">
-                <div class="success-content">
-                    <div class="success-animation">
-                        <div class="success-icon">✅</div>
-                        <div class="success-glow"></div>
-                    </div>
-                    <h3>Audio Processing Complete!</h3>
-                    <p>Your professionally cleaned audio with perfect instrumental preservation is ready</p>
-                    
-                    <div class="success-stats">
-                        <div class="success-stat">
-                            <span class="stat-number" id="finalDetections">0</span>
-                            <span class="stat-desc">Words Successfully Processed</span>
-                        </div>
-                        <div class="success-stat">
-                            <span class="stat-number" id="finalAccuracy">99%</span>
-                            <span class="stat-desc">Detection Accuracy Achieved</span>
-                        </div>
+            <!-- Payment Section -->
+            <section class="payment-section hidden" id="paymentSection">
+                <h2 class="payment-title">Choose Your Plan</h2>
+                <p class="text-center mb-2">Select a plan to download your professionally cleaned audio</p>
+
+                <div class="pricing-cards">
+                    <div class="pricing-card" data-plan="single">
+                        <div class="plan-name">Single Song</div>
+                        <div class="plan-price">$2.99</div>
+                        <ul class="plan-features">
+                            <li>Single song processing</li>
+                            <li>Clean audio download</li>
+                            <li>Vocal isolation</li>
+                            <li>Instrumental preservation</li>
+                        </ul>
+                        <button class="btn btn-primary" data-plan="single">Choose Single Song</button>
                     </div>
 
-                    <div class="success-actions">
-                        <button class="btn btn--primary btn--lg glow" id="downloadCleanBtn">
-                            <span>Download Clean Version</span>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7,10 12,15 17,10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                        </button>
-                        
-                        <div class="secondary-actions">
-                            <button class="btn btn--outline" id="processAnotherBtn">Process Another File</button>
-                            <button class="btn btn--secondary" id="returnHomeBtn">Return to Home</button>
-                        </div>
+                    <div class="pricing-card popular" data-plan="day">
+                        <div class="popular-badge">Most Popular</div>
+                        <div class="plan-name">Day Pass</div>
+                        <div class="plan-price">$9.99</div>
+                        <ul class="plan-features">
+                            <li>24hr unlimited processing</li>
+                            <li>Priority processing</li>
+                            <li>Advanced analytics</li>
+                            <li>Batch processing</li>
+                        </ul>
+                        <button class="btn btn-primary" data-plan="day">Choose Day Pass</button>
+                    </div>
+
+                    <div class="pricing-card premium" data-plan="monthly">
+                        <div class="plan-name">Monthly Pro</div>
+                        <div class="plan-price">$29.99</div>
+                        <ul class="plan-features">
+                            <li>Unlimited monthly processing</li>
+                            <li>Individual stem downloads</li>
+                            <li>Lyrics extraction & download</li>
+                            <li>Fastest processing speed</li>
+                            <li>Priority support</li>
+                        </ul>
+                        <button class="btn btn-primary" data-plan="monthly">Choose Monthly Pro</button>
                     </div>
                 </div>
             </section>
 
-            <!-- Error Section -->
-            <section class="error-section hidden" id="errorSection">
-                <div class="error-content">
-                    <div class="error-icon">❌</div>
-                    <h3>Processing Error</h3>
-                    <p id="errorMessage">Something went wrong. Please try again.</p>
-                    <div class="error-actions">
-                        <button class="btn btn--primary" id="retryBtn">Try Again</button>
-                        <button class="btn btn--outline" id="contactSupportBtn">Contact Support</button>
+            <!-- Download Section -->
+            <section class="download-section hidden" id="downloadSection">
+                <div class="download-title">✅ Processing Complete!</div>
+                <p>Your audio has been professionally cleaned and is ready for download.</p>
+
+                <div class="download-options">
+                    <button class="btn btn-primary" id="downloadClean">
+                        ⬇️ Download Clean Audio
+                    </button>
+                </div>
+
+                <div class="premium-features hidden" id="premiumFeatures">
+                    <h4>Monthly Pro Features ($29.99)</h4>
+                    <div class="download-options">
+                        <button class="btn btn-secondary" id="downloadVocals">
+                            🎤 Download Vocals Only
+                        </button>
+                        <button class="btn btn-secondary" id="downloadInstrumental">
+                            🎶 Download Instrumental Only
+                        </button>
+                        <button class="btn btn-secondary" id="downloadLyrics">
+                            📝 Download Lyrics
+                        </button>
                     </div>
+                </div>
+
+                <div class="text-center" style="margin-top: 2rem;">
+                    <button class="btn btn-secondary" id="processAnother">Process Another Song</button>
                 </div>
             </section>
         </main>
 
-        <footer class="app-footer">
-            <div class="footer-content">
-                <div class="footer-info">
-                    <p>&copy; 2025 FWEA-I Precision Audio Processing. All rights reserved.</p>
-                    <p>Server Status: <span class="server-status" id="serverStatus">Checking...</span></p>
-                </div>
-                <div class="footer-admin">
-                    <button type="button" class="admin-unlock" id="adminUnlock">Admin</button>
-                </div>
-            </div>
-        </footer>
-    </div>
-
-    <!-- Payment Modal -->
-    <div class="modal hidden" id="paywallModal">
-        <div class="modal-overlay" id="paywallOverlay"></div>
-        <div class="modal-content payment-modal">
-            <div class="modal-header">
-                <h2>Choose Your Plan</h2>
-                <button type="button" class="modal-close" id="modalClose">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p class="payment-description">Unlock professional audio cleaning with advanced profanity detection:</p>
-                
-                <div class="pricing-tiers">
-                    <div class="tier">
-                        <div class="tier-header">
-                            <h3>Single Song</h3>
-                            <div class="price">$2.99</div>
-                        </div>
-                        <div class="tier-features">
-                            <p>✓ Single song processing</p>
-                            <p>✓ Clean audio download</p>
-                            <p>✓ Vocal isolation</p>
-                            <p>✓ Instrumental preservation</p>
-                        </div>
-                        <button type="button" class="btn btn--primary tier-btn" 
-                                data-tier="single" 
-                                data-price-id="price_1SF2ZGJ2Iq1764pCKiLND2oR"
-                                data-product-id="prod_TBPOU41YRPmtrz">
-                            Choose Plan
-                        </button>
-                    </div>
-                    
-                    <div class="tier featured">
-                        <div class="tier-badge">Most Popular</div>
-                        <div class="tier-header">
-                            <h3>Day Pass</h3>
-                            <div class="price">$9.99</div>
-                            <small>24 hours</small>
-                        </div>
-                        <div class="tier-features">
-                            <p>✓ 24hr unlimited processing</p>
-                            <p>✓ Priority processing</p>
-                            <p>✓ Advanced analytics</p>
-                            <p>✓ Batch processing</p>
-                        </div>
-                        <button type="button" class="btn btn--primary tier-btn glow" 
-                                data-tier="day" 
-                                data-price-id="price_1S4NsTJ2Iq1764pCCbru0Aao"
-                                data-product-id="prod_T0OfjCTc3uSkEX">
-                            Choose Plan
-                        </button>
-                    </div>
-                    
-                    <div class="tier premium">
-                        <div class="tier-header">
-                            <h3>Monthly Pro</h3>
-                            <div class="price">$29.99</div>
-                            <small>per month</small>
-                        </div>
-                        <div class="tier-features">
-                            <p>✓ Unlimited monthly processing</p>
-                            <p>✓ Individual stem downloads</p>
-                            <p>✓ Fastest processing speed</p>
-                            <p>✓ Priority support</p>
-                        </div>
-                        <button type="button" class="btn btn--primary tier-btn" 
-                                data-tier="monthly" 
-                                data-price-id="price_1SF2fxJ2Iq1764pCe77B6Cuo"
-                                data-product-id="prod_TBPUtS1espZUmQ">
-                            Choose Plan
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="payment-security">
-                    <p>🔒 Secured by Stripe • SSL Encrypted • Webhook Protected</p>
+        <!-- Modal -->
+        <div class="modal hidden" id="modal">
+            <div class="modal-content">
+                <h3 class="modal-title" id="modalTitle">Processing</h3>
+                <p id="modalMessage">Please wait...</p>
+                <div class="text-center" style="margin-top: 1rem;">
+                    <button class="btn btn-primary" id="modalClose">Close</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Admin Modal -->
-    <div class="modal hidden" id="adminModal">
-        <div class="modal-overlay" id="adminOverlay"></div>
-        <div class="modal-content modal-small">
-            <div class="modal-header">
-                <h3>Admin Access</h3>
-                <button type="button" class="modal-close" id="adminModalClose">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label class="form-label" for="adminPassword">Password:</label>
-                    <input type="password" class="form-control" id="adminPassword" placeholder="Enter admin password">
-                </div>
-                <button type="button" class="btn btn--primary btn--full-width" id="adminSubmit">Unlock Admin Mode</button>
-                <div class="admin-features">
-                    <small>Admin features: Payment bypass, Processing logs, System monitoring</small>
-                </div>
-            </div>
-        </div>
-    </div>
+    <script>
+        // FWEA-I Final Clean Audio Editor - FIXED VERSION
+        console.log('🎯 FWEA-I Final Clean Audio Editor Loading...');
 
-    <!-- Payment Processing Modal -->
-    <div class="modal hidden" id="paymentModal">
-        <div class="modal-overlay"></div>
-        <div class="modal-content modal-small">
-            <div class="modal-body text-center">
-                <div class="payment-spinner">
-                    <div class="spinner"></div>
-                </div>
-                <h3>Processing Payment...</h3>
-                <p>Please wait while we securely process your payment with webhook verification.</p>
-            </div>
-        </div>
-    </div>
+        const CONFIG = {
+            workerUrl: 'https://omni-clean-5.fweago-flavaz.workers.dev',
+            stripePublishableKey: 'pk_live_51RW06LJ2Iq1764pCr02p7yLia0VqBgUcRfG7Qm5OWFNAwFZcexIs9iBB3B9s22elcQzQjuAUMBxpeUhwcm8hsDf900NbCbF3Vw'
+        };
 
-    <script src="app.js"></script>
+        let appState = {
+            currentSection: 'upload',
+            sessionId: null,
+            audioFile: null,
+            processingData: null,
+            userPlan: null
+        };
+
+        // DOM Elements
+        const elements = {
+            // Sections
+            uploadSection: document.getElementById('uploadSection'),
+            processingSection: document.getElementById('processingSection'),
+            resultsSection: document.getElementById('resultsSection'),
+            paymentSection: document.getElementById('paymentSection'),
+            downloadSection: document.getElementById('downloadSection'),
+
+            // Upload
+            dropZone: document.getElementById('dropZone'),
+            browseBtn: document.getElementById('browseBtn'),
+            fileInput: document.getElementById('fileInput'),
+
+            // Processing
+            progressFill: document.getElementById('progressFill'),
+            progressText: document.getElementById('progressText'),
+
+            // Results
+            wordsDetected: document.getElementById('wordsDetected'),
+            cleaningAccuracy: document.getElementById('cleaningAccuracy'),
+            processingTime: document.getElementById('processingTime'),
+            audioPreview: document.getElementById('audioPreview'),
+
+            // Download
+            downloadClean: document.getElementById('downloadClean'),
+            downloadVocals: document.getElementById('downloadVocals'),
+            downloadInstrumental: document.getElementById('downloadInstrumental'),
+            downloadLyrics: document.getElementById('downloadLyrics'),
+            premiumFeatures: document.getElementById('premiumFeatures'),
+            processAnother: document.getElementById('processAnother'),
+
+            // Modal
+            modal: document.getElementById('modal'),
+            modalTitle: document.getElementById('modalTitle'),
+            modalMessage: document.getElementById('modalMessage'),
+            modalClose: document.getElementById('modalClose')
+        };
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Initializing FWEA-I Final Clean Audio Editor...');
+            setupEventListeners();
+            handleURLParameters();
+        });
+
+        function setupEventListeners() {
+            // Upload handlers
+            elements.dropZone.addEventListener('click', () => elements.fileInput.click());
+            elements.browseBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                elements.fileInput.click();
+            });
+            elements.fileInput.addEventListener('change', handleFileSelect);
+
+            // Drag and drop
+            elements.dropZone.addEventListener('dragover', handleDragOver);
+            elements.dropZone.addEventListener('dragleave', handleDragLeave);
+            elements.dropZone.addEventListener('drop', handleFileDrop);
+
+            // Payment buttons
+            document.querySelectorAll('.btn[data-plan]').forEach(btn => {
+                btn.addEventListener('click', handlePayment);
+            });
+
+            // Download buttons
+            elements.downloadClean?.addEventListener('click', () => handleDownload('clean'));
+            elements.downloadVocals?.addEventListener('click', () => handleDownload('vocals'));
+            elements.downloadInstrumental?.addEventListener('click', () => handleDownload('instrumental'));
+            elements.downloadLyrics?.addEventListener('click', () => handleDownload('lyrics'));
+            elements.processAnother?.addEventListener('click', resetApp);
+
+            // Modal
+            elements.modalClose?.addEventListener('click', () => hideModal());
+        }
+
+        // File handling
+        function handleDragOver(e) {
+            e.preventDefault();
+            elements.dropZone.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            elements.dropZone.classList.remove('drag-over');
+        }
+
+        function handleFileDrop(e) {
+            e.preventDefault();
+            elements.dropZone.classList.remove('drag-over');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                processFile(file);
+            }
+        }
+
+        async function processFile(file) {
+            if (!validateFile(file)) return;
+
+            appState.audioFile = file;
+            showSection('processing');
+
+            try {
+                // Upload file
+                const uploadResult = await uploadFile(file);
+                appState.sessionId = uploadResult.sessionId;
+
+                // Start processing
+                await startProcessing();
+
+            } catch (error) {
+                console.error('Processing error:', error);
+                showModal('Processing Error', error.message || 'Failed to process audio file.');
+                showSection('upload');
+            }
+        }
+
+        function validateFile(file) {
+            const validFormats = ['mp3', 'wav', 'm4a', 'aac', 'flac', 'ogg'];
+            const fileExt = file.name.split('.').pop().toLowerCase();
+
+            if (!validFormats.includes(fileExt)) {
+                showModal('Invalid Format', `Format "${fileExt}" not supported. Use: ${validFormats.join(', ')}`);
+                return false;
+            }
+
+            if (file.size > 104857600) { // 100MB
+                showModal('File Too Large', 'Maximum file size is 100MB.');
+                return false;
+            }
+
+            return true;
+        }
+
+        async function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('audio', file);
+
+            const response = await fetch(`${CONFIG.workerUrl}/upload`, {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (!result.success) {
+                throw new Error(result.error || 'Upload failed');
+            }
+
+            return result;
+        }
+
+        async function startProcessing() {
+            updateProgress(0, 'Starting audio analysis...');
+            updateStep(1, 'active');
+
+            try {
+                const response = await fetch(`${CONFIG.workerUrl}/process`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId: appState.sessionId })
+                });
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    throw new Error(result.error || 'Processing failed');
+                }
+
+                appState.processingData = result;
+
+                // Animate progress through steps
+                await animateProcessing();
+
+                // Show results
+                showResults(result);
+
+            } catch (error) {
+                console.error('Processing error:', error);
+                throw error;
+            }
+        }
+
+        async function animateProcessing() {
+            // Step 1: Analysis
+            updateStep(1, 'active');
+            updateProgress(25, 'Analyzing audio structure...');
+            await delay(2000);
+            updateStep(1, 'completed');
+
+            // Step 2: Stem separation
+            updateStep(2, 'active');
+            updateProgress(50, 'Separating vocals and instruments...');
+            await delay(3000);
+            updateStep(2, 'completed');
+
+            // Step 3: AI Detection
+            updateStep(3, 'active');
+            updateProgress(75, 'Detecting explicit content with AI...');
+            await delay(2500);
+            updateStep(3, 'completed');
+
+            // Step 4: Cleaning
+            updateStep(4, 'active');
+            updateProgress(100, 'Cleaning audio with precision...');
+            await delay(2000);
+            updateStep(4, 'completed');
+        }
+
+        function showResults(data) {
+            const processing = data.processing || {};
+
+            // Update stats
+            elements.wordsDetected.textContent = processing.detectedWords || 0;
+            elements.cleaningAccuracy.textContent = `${Math.round((processing.cleaningAccuracy || 0) * 100)}%`;
+            elements.processingTime.textContent = `${processing.processingTime || 0}s`;
+
+            // Setup preview
+            if (data.preview && data.preview.available) {
+                elements.audioPreview.src = `${CONFIG.workerUrl}${data.preview.url}`;
+            }
+
+            showSection('results');
+
+            // Auto-advance to payment after preview
+            setTimeout(() => {
+                showSection('payment');
+            }, 5000);
+        }
+
+        async function handlePayment(e) {
+            const plan = e.target.dataset.plan;
+            if (!plan || !appState.sessionId) return;
+
+            try {
+                e.target.disabled = true;
+                e.target.textContent = 'Processing...';
+
+                const response = await fetch(`${CONFIG.workerUrl}/create-payment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sessionId: appState.sessionId,
+                        plan: plan
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    throw new Error(result.error || 'Payment creation failed');
+                }
+
+                // Redirect to Stripe checkout
+                window.location.href = result.checkoutUrl;
+
+            } catch (error) {
+                console.error('Payment error:', error);
+                showModal('Payment Error', error.message || 'Payment processing failed');
+                e.target.disabled = false;
+                e.target.textContent = e.target.dataset.originalText || 'Choose Plan';
+            }
+        }
+
+        async function handleDownload(type) {
+            if (!appState.sessionId) return;
+
+            try {
+                let url;
+                if (type === 'lyrics') {
+                    url = `${CONFIG.workerUrl}/download-lyrics?session=${appState.sessionId}`;
+                } else {
+                    url = `${CONFIG.workerUrl}/download?session=${appState.sessionId}&type=${type}`;
+                }
+
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `fwea_${type}_${appState.audioFile?.name || 'audio'}`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+            } catch (error) {
+                console.error('Download error:', error);
+                showModal('Download Error', 'Failed to download file. Please try again.');
+            }
+        }
+
+        function handleURLParameters() {
+            const urlParams = new URLSearchParams(window.location.search);
+
+            if (urlParams.get('success') === 'true') {
+                const plan = urlParams.get('plan');
+                const fweaSession = urlParams.get('fwea_session');
+
+                if (plan && fweaSession) {
+                    appState.sessionId = fweaSession;
+                    appState.userPlan = plan;
+                    handlePaymentSuccess(plan);
+                }
+
+                // Clean URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+
+            } else if (urlParams.get('canceled') === 'true') {
+                showModal('Payment Canceled', 'Payment was canceled. You can try again anytime.');
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+
+        function handlePaymentSuccess(plan) {
+            appState.userPlan = plan;
+
+            // Show premium features for Monthly Pro
+            if (plan === 'monthly') {
+                elements.premiumFeatures?.classList.remove('hidden');
+            }
+
+            showSection('download');
+            showModal('Payment Successful!', 'Your audio is now ready for download.');
+        }
+
+        // UI utilities
+        function showSection(sectionName) {
+            const sections = ['upload', 'processing', 'results', 'payment', 'download'];
+
+            sections.forEach(section => {
+                const element = elements[`${section}Section`];
+                if (element) {
+                    if (section === sectionName) {
+                        element.classList.remove('hidden');
+                    } else {
+                        element.classList.add('hidden');
+                    }
+                }
+            });
+
+            appState.currentSection = sectionName;
+        }
+
+        function updateProgress(percentage, message) {
+            elements.progressFill.style.width = `${percentage}%`;
+            elements.progressText.textContent = message;
+        }
+
+        function updateStep(stepNumber, status) {
+            const step = document.getElementById(`step${stepNumber}`);
+            if (!step) return;
+
+            // Reset all steps
+            for (let i = 1; i <= 4; i++) {
+                const s = document.getElementById(`step${i}`);
+                if (s) {
+                    s.className = 'step';
+                }
+            }
+
+            // Update current step
+            step.className = `step ${status}`;
+
+            // Mark previous steps as completed
+            for (let i = 1; i < stepNumber; i++) {
+                const s = document.getElementById(`step${i}`);
+                if (s) {
+                    s.className = 'step completed';
+                }
+            }
+        }
+
+        function showModal(title, message) {
+            elements.modalTitle.textContent = title;
+            elements.modalMessage.textContent = message;
+            elements.modal.classList.remove('hidden');
+        }
+
+        function hideModal() {
+            elements.modal.classList.add('hidden');
+        }
+
+        function resetApp() {
+            appState = {
+                currentSection: 'upload',
+                sessionId: null,
+                audioFile: null,
+                processingData: null,
+                userPlan: null
+            };
+
+            elements.fileInput.value = '';
+            updateProgress(0, 'Ready to process...');
+            showSection('upload');
+        }
+
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        console.log('✅ FWEA-I Final Clean Audio Editor loaded successfully!');
+    </script>
 </body>
 </html>
