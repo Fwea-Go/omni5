@@ -3,21 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FWEA-I Surgical Clean Version Editor</title>
+    <title>FWEA-I Precision Clean Audio Editor</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
-    <div class="particles-container" id="particlesContainer"></div>
+    <div class="particles-container" id="particlesContainer">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
 
     <div class="app-container">
         <header class="app-header">
-            <h1 class="app-title">FWEA-I SURGICAL CLEAN VERSION EDITOR</h1>
-            <p class="app-subtitle">AI-powered surgical vocal isolation & explicit content removal</p>
-            <div class="precision-indicator">
-                <span class="precision-badge">🎯 SURGICAL PRECISION</span>
-                <span class="preservation-badge">🎼 100% INSTRUMENTAL PRESERVATION</span>
-            </div>
+            <h1 class="app-title">FWEA-I PRECISION CLEAN AUDIO EDITOR</h1>
+            <p class="app-subtitle">Advanced AI-powered profanity detection & stem separation with foolproof accuracy</p>
         </header>
 
         <main class="app-main">
@@ -26,33 +28,26 @@
                 <div class="drop-zone" id="dropZone">
                     <div class="drop-zone-content">
                         <div class="upload-icon pulse">🎵</div>
-                        <h3>Upload Audio for Surgical Processing</h3>
+                        <h3>Upload Your Audio File</h3>
                         <p>or <button type="button" class="browse-btn" id="browseBtn">browse files</button></p>
                         <small>Supports MP3, WAV, M4A, AAC, FLAC, OGG (max 100MB)</small>
-                        <div class="surgical-features">
-                            <div class="feature">
-                                <span class="feature-icon">🔪</span>
-                                <span>Surgical Vocal Isolation</span>
-                            </div>
-                            <div class="feature">
-                                <span class="feature-icon">🎯</span>
-                                <span>Word-Level Precision</span>
-                            </div>
-                            <div class="feature">
-                                <span class="feature-icon">🛡️</span>
-                                <span>Instrumental Protection</span>
-                            </div>
+                        <div class="format-indicators">
+                            <span class="format">MP3</span>
+                            <span class="format">WAV</span>
+                            <span class="format">M4A</span>
+                            <span class="format">FLAC</span>
                         </div>
                     </div>
                 </div>
                 <input type="file" id="fileInput" accept=".mp3,.wav,.m4a,.aac,.flac,.ogg" style="display: none;">
                 
                 <div class="upload-progress hidden" id="uploadProgress">
-                    <div class="progress-header">
-                        <h4>Preparing for Surgical Processing</h4>
-                        <div class="file-info">
-                            <span class="file-name" id="fileName"></span>
+                    <div class="progress-info">
+                        <span class="file-name" id="fileName"></span>
+                        <div class="file-details">
                             <span class="file-size" id="fileSize"></span>
+                            <span class="upload-speed" id="uploadSpeed"></span>
+                            <span class="eta" id="uploadEta"></span>
                         </div>
                     </div>
                     <div class="progress-bar">
@@ -64,93 +59,91 @@
 
             <!-- Processing Section -->
             <section class="processing-section hidden" id="processingSection">
-                <div class="surgical-status">
-                    <h3>Surgical Audio Processing Active</h3>
+                <div class="processing-status">
+                    <h3>Advanced Audio Processing with Real-Time Detection</h3>
                     <div class="processing-ring">
                         <div class="ring-progress" id="processingRing"></div>
                         <div class="ring-percentage" id="processingPercentage">0%</div>
                     </div>
-                    <div class="eta-display" id="etaDisplay">Initializing surgical separation...</div>
+                    <div class="eta-display" id="etaDisplay">Initializing multi-layer profanity detection...</div>
                     
-                    <div class="surgical-steps">
+                    <div class="status-steps">
                         <div class="step active" id="step1">
-                            <span class="step-icon">🔪</span>
-                            <div class="step-content">
-                                <span class="step-title">Surgical Stem Separation</span>
-                                <span class="step-desc">Isolating vocals from instrumental with precision</span>
-                            </div>
+                            <span class="step-icon">🎼</span>
+                            <span class="step-text">Stem separation & audio analysis...</span>
                         </div>
                         <div class="step" id="step2">
-                            <span class="step-icon">📝</span>
-                            <div class="step-content">
-                                <span class="step-title">Vocal-Only Transcription</span>
-                                <span class="step-desc">Word-level timestamps on vocal track only</span>
-                            </div>
+                            <span class="step-icon">🧠</span>
+                            <span class="step-text">AI transcription with phonetic analysis...</span>
                         </div>
                         <div class="step" id="step3">
                             <span class="step-icon">🎯</span>
-                            <div class="step-content">
-                                <span class="step-title">Precision Profanity Detection</span>
-                                <span class="step-desc">95%+ confidence explicit content mapping</span>
-                            </div>
+                            <span class="step-text">Advanced profanity detection & validation...</span>
                         </div>
                         <div class="step" id="step4">
-                            <span class="step-icon">✂️</span>
-                            <div class="step-content">
-                                <span class="step-title">Surgical Muting</span>
-                                <span class="step-desc">Vocal-only edits, instrumental untouched</span>
-                            </div>
-                        </div>
-                        <div class="step" id="step5">
-                            <span class="step-icon">🔄</span>
-                            <div class="step-content">
-                                <span class="step-title">Seamless Recombination</span>
-                                <span class="step-desc">Mixing cleaned vocals with original instrumental</span>
-                            </div>
+                            <span class="step-icon">✨</span>
+                            <span class="step-text">Clean audio generation & quality check...</span>
                         </div>
                     </div>
 
-                    <div class="surgical-guarantee">
-                        <div class="guarantee-item">
-                            <div class="guarantee-icon">🛡️</div>
-                            <div class="guarantee-text">
-                                <strong>Instrumental Guarantee</strong>
-                                <span>0% modification to instrumental track</span>
+                    <div class="detection-features">
+                        <div class="detection-feature">
+                            <div class="feature-icon">🔍</div>
+                            <div class="feature-text">
+                                <strong>Multi-Engine Detection</strong>
+                                <span>Pattern matching + AI validation + Context analysis</span>
                             </div>
                         </div>
-                        <div class="guarantee-item">
-                            <div class="guarantee-icon">🎯</div>
-                            <div class="guarantee-text">
-                                <strong>Surgical Precision</strong>
-                                <span>Only explicit vocal content targeted</span>
+                        <div class="detection-feature">
+                            <div class="feature-icon">🎵</div>
+                            <div class="feature-text">
+                                <strong>Precision Audio Muting</strong>
+                                <span>Exact waveform manipulation with beat preservation</span>
+                            </div>
+                        </div>
+                        <div class="detection-feature">
+                            <div class="feature-icon">🌍</div>
+                            <div class="feature-text">
+                                <strong>Multi-Language Support</strong>
+                                <span>English, Spanish, French, Portuguese + variants</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="vocal-analysis-preview hidden" id="vocalAnalysisPreview">
-                    <h4>Live Vocal Analysis</h4>
-                    <div class="analysis-stats">
-                        <div class="stat">
-                            <span class="label">Language Detected:</span>
-                            <div class="value-group">
-                                <span class="value" id="detectedLanguage">English</span>
-                                <span class="confidence" id="languageConfidence">95%</span>
+                <div class="analysis-preview hidden" id="analysisPreview">
+                    <h4>Real-Time Processing Analysis</h4>
+                    <div class="analysis-metrics">
+                        <div class="metric">
+                            <span class="metric-label">Detected Language:</span>
+                            <div class="metric-value">
+                                <span id="detectedLanguage">English</span>
+                                <span class="confidence-badge" id="languageConfidence">95%</span>
                             </div>
                         </div>
-                        <div class="stat">
-                            <span class="label">Vocal Explicit Content:</span>
-                            <span class="value explicit-count" id="explicitCount">0 instances</span>
+                        <div class="metric">
+                            <span class="metric-label">Profanity Detections:</span>
+                            <div class="metric-value">
+                                <span id="detectionCount">0 instances</span>
+                                <span class="accuracy-badge" id="detectionAccuracy">99%</span>
+                            </div>
                         </div>
-                        <div class="stat">
-                            <span class="label">Instrumental Status:</span>
-                            <span class="value preserved">100% Preserved</span>
+                        <div class="metric">
+                            <span class="metric-label">Processing Engine:</span>
+                            <div class="metric-value">
+                                <span id="processingEngine">Multi-AI</span>
+                                <span class="engine-badge" id="engineStatus">Active</span>
+                            </div>
                         </div>
                     </div>
                     <div class="transcript-container">
                         <div class="transcript-header">
-                            <h5>Vocal Track Transcription</h5>
-                            <span class="processing-indicator">🎤 Processing vocals only</span>
+                            <h5>Detection Analysis</h5>
+                            <div class="detection-legend">
+                                <span class="legend-item detected">Detected</span>
+                                <span class="legend-item processed">Processed</span>
+                                <span class="legend-item clean">Clean</span>
+                            </div>
                         </div>
                         <div class="transcript-text" id="transcriptText"></div>
                     </div>
@@ -160,69 +153,102 @@
             <!-- Preview Section -->
             <section class="preview-section hidden" id="previewSection">
                 <div class="preview-header">
-                    <h3>Surgical Processing Complete</h3>
-                    <p class="surgical-summary">
-                        Vocals surgically cleaned • Instrumental 100% preserved
-                    </p>
+                    <h3>Clean Audio Preview</h3>
+                    <p>Listen to your professionally cleaned audio with perfect instrumental preservation</p>
                 </div>
                 
-                <div class="audio-preview-container">
-                    <div class="track-selector">
-                        <button class="track-btn active" data-track="combined" id="combinedBtn">
-                            <span class="track-icon">🎵</span>
-                            Combined (Clean)
-                        </button>
-                        <button class="track-btn" data-track="vocals" id="vocalsBtn">
-                            <span class="track-icon">🎤</span>
-                            Vocals Only
-                        </button>
-                        <button class="track-btn" data-track="instrumental" id="instrumentalBtn">
-                            <span class="track-icon">🎼</span>
-                            Instrumental (Untouched)
-                        </button>
+                <div class="audio-player">
+                    <audio controls id="audioPlayer">
+                        Your browser does not support the audio element.
+                    </audio>
+                    <div class="waveform-container">
+                        <div class="waveform" id="waveform">
+                            <div class="vocal-track" id="vocalTrack"></div>
+                            <div class="instrumental-track" id="instrumentalTrack"></div>
+                            <div class="muted-sections" id="mutedSections"></div>
+                            <div class="playhead" id="playhead"></div>
+                        </div>
+                    </div>
+                    <div class="playback-info">
+                        <span class="current-time" id="currentTime">0:00</span>
+                        <span class="total-time" id="totalTime">0:30</span>
+                        <div class="quality-indicator">
+                            <span class="quality-label">Quality:</span>
+                            <span class="quality-value" id="audioQuality">High</span>
+                        </div>
                     </div>
                     
-                    <div class="audio-player-enhanced">
-                        <audio controls id="audioPlayer">
-                            Your browser does not support the audio element.
-                        </audio>
-                        <div class="waveform-container">
-                            <div class="track-layers">
-                                <div class="vocal-layer" id="vocalLayer"></div>
-                                <div class="instrumental-layer" id="instrumentalLayer"></div>
-                                <div class="muted-regions" id="mutedRegions"></div>
-                                <div class="playhead" id="playhead"></div>
-                            </div>
+                    <div class="track-visualization">
+                        <div class="track-indicator vocal-indicator">
+                            <div class="track-color vocal-color"></div>
+                            <span>Vocal Track (Cleaned)</span>
                         </div>
-                        <div class="playback-controls">
-                            <span class="time-display">
-                                <span id="currentTime">0:00</span> / <span id="totalTime">0:30</span>
-                            </span>
-                            <div class="surgical-indicators">
-                                <span class="indicator vocal-indicator">🎤 Vocals</span>
-                                <span class="indicator instrumental-indicator">🎼 Instrumental</span>
-                                <span class="indicator muted-indicator">🔇 Muted</span>
-                            </div>
+                        <div class="track-indicator instrumental-indicator">
+                            <div class="track-color instrumental-color"></div>
+                            <span>Instrumental Track (Preserved)</span>
+                        </div>
+                        <div class="track-indicator muted-indicator">
+                            <div class="track-color muted-color"></div>
+                            <span>Muted Sections</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="surgical-results">
-                    <div class="result-stat">
-                        <div class="stat-value" id="vocalEditCount">0</div>
-                        <div class="stat-label">Vocal Edits Made</div>
+                <div class="processing-stats">
+                    <div class="stat">
+                        <div class="stat-value" id="totalDetections">0</div>
+                        <div class="stat-label">Words Processed</div>
                     </div>
-                    <div class="result-stat">
-                        <div class="stat-value" id="instrumentalStatus">100%</div>
-                        <div class="stat-label">Instrumental Preserved</div>
+                    <div class="stat">
+                        <div class="stat-value" id="cleaningAccuracy">99%</div>
+                        <div class="stat-label">Accuracy Rate</div>
                     </div>
-                    <div class="result-stat">
-                        <div class="stat-value" id="precisionScore">99.9%</div>
-                        <div class="stat-label">Surgical Precision</div>
-                    </div>
-                    <div class="result-stat">
+                    <div class="stat">
                         <div class="stat-value" id="processingTime">0s</div>
-                        <div class="stat-label">Processing Time</div>
+                        <div class="stat-label">Process Time</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="audioFormat">WAV</div>
+                        <div class="stat-label">Output Format</div>
+                    </div>
+                </div>
+
+                <!-- Subscription-based Stem Downloads (Only for $29.99 subscribers) -->
+                <div class="stem-downloads hidden" id="stemDownloads">
+                    <h4>Individual Stems (Monthly Pro Only)</h4>
+                    <div class="stem-buttons">
+                        <button class="btn btn--secondary" id="downloadVocals">
+                            <span>Download Vocals</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7,10 12,15 17,10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        </button>
+                        <button class="btn btn--secondary" id="downloadInstrumentals">
+                            <span>Download Instrumentals</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7,10 12,15 17,10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        </button>
+                        <button class="btn btn--secondary" id="downloadBass">
+                            <span>Download Bass</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7,10 12,15 17,10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        </button>
+                        <button class="btn btn--secondary" id="downloadDrums">
+                            <span>Download Drums</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7,10 12,15 17,10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        </button>
                     </div>
                 </div>
 
@@ -241,23 +267,23 @@
                         <div class="success-icon">✅</div>
                         <div class="success-glow"></div>
                     </div>
-                    <h3>Surgical Processing Complete!</h3>
-                    <p>Your audio has been surgically cleaned with precision</p>
+                    <h3>Audio Processing Complete!</h3>
+                    <p>Your professionally cleaned audio with perfect instrumental preservation is ready</p>
                     
-                    <div class="final-stats">
-                        <div class="final-stat">
-                            <span class="stat-number" id="finalVocalEdits">0</span>
-                            <span class="stat-desc">Surgical Vocal Edits</span>
+                    <div class="success-stats">
+                        <div class="success-stat">
+                            <span class="stat-number" id="finalDetections">0</span>
+                            <span class="stat-desc">Words Successfully Processed</span>
                         </div>
-                        <div class="final-stat">
-                            <span class="stat-number" id="finalInstrumentalStatus">100%</span>
-                            <span class="stat-desc">Instrumental Preserved</span>
+                        <div class="success-stat">
+                            <span class="stat-number" id="finalAccuracy">99%</span>
+                            <span class="stat-desc">Detection Accuracy Achieved</span>
                         </div>
                     </div>
 
                     <div class="success-actions">
-                        <button class="btn btn--primary btn--lg glow" id="downloadBtn">
-                            <span>Download Surgical Clean Version</span>
+                        <button class="btn btn--primary btn--lg glow" id="downloadCleanBtn">
+                            <span>Download Clean Version</span>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                 <polyline points="7,10 12,15 17,10"></polyline>
@@ -266,7 +292,7 @@
                         </button>
                         
                         <div class="secondary-actions">
-                            <button class="btn btn--outline" id="processAnotherBtn">Process Another Track</button>
+                            <button class="btn btn--outline" id="processAnotherBtn">Process Another File</button>
                             <button class="btn btn--secondary" id="returnHomeBtn">Return to Home</button>
                         </div>
                     </div>
@@ -278,7 +304,7 @@
                 <div class="error-content">
                     <div class="error-icon">❌</div>
                     <h3>Processing Error</h3>
-                    <p id="errorMessage">Something went wrong with the surgical processing.</p>
+                    <p id="errorMessage">Something went wrong. Please try again.</p>
                     <div class="error-actions">
                         <button class="btn btn--primary" id="retryBtn">Try Again</button>
                         <button class="btn btn--outline" id="contactSupportBtn">Contact Support</button>
@@ -290,11 +316,11 @@
         <footer class="app-footer">
             <div class="footer-content">
                 <div class="footer-info">
-                    <p>&copy; 2025 FWEA-I Surgical Audio Processing. All rights reserved.</p>
-                    <p>Hetzner Server: <span class="server-status online" id="serverStatus">Online</span></p>
+                    <p>&copy; 2025 FWEA-I Precision Audio Processing. All rights reserved.</p>
+                    <p>Server Status: <span class="server-status" id="serverStatus">Checking...</span></p>
                 </div>
                 <div class="footer-admin">
-                    <button type="button" class="admin-unlock" id="adminUnlock">🔧 Admin Access</button>
+                    <button type="button" class="admin-unlock" id="adminUnlock">Admin</button>
                 </div>
             </div>
         </footer>
@@ -305,19 +331,11 @@
         <div class="modal-overlay" id="paywallOverlay"></div>
         <div class="modal-content payment-modal">
             <div class="modal-header">
-                <h2>Unlock Surgical Clean Version</h2>
+                <h2>Choose Your Plan</h2>
                 <button type="button" class="modal-close" id="modalClose">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="payment-feature-highlight">
-                    <div class="feature-highlight">
-                        <span class="highlight-icon">🔪</span>
-                        <div class="highlight-text">
-                            <strong>Surgical Vocal Processing</strong>
-                            <span>Only explicit vocal content removed, instrumentals untouched</span>
-                        </div>
-                    </div>
-                </div>
+                <p class="payment-description">Unlock professional audio cleaning with advanced profanity detection:</p>
                 
                 <div class="pricing-tiers">
                     <div class="tier">
@@ -326,13 +344,16 @@
                             <div class="price">$2.99</div>
                         </div>
                         <div class="tier-features">
-                            <p>✓ Surgical vocal isolation</p>
-                            <p>✓ Word-level precision muting</p>
-                            <p>✓ 100% instrumental preservation</p>
-                            <p>✓ High-quality processing</p>
+                            <p>✓ Single song processing</p>
+                            <p>✓ Clean audio download</p>
+                            <p>✓ Vocal isolation</p>
+                            <p>✓ Instrumental preservation</p>
                         </div>
-                        <button type="button" class="btn btn--primary tier-btn" data-tier="single" data-price-id="price_1SF2ZGJ2Iq1764pCKiLND2oR" data-product-id="prod_TBPOU41YRPmtrz">
-                            Choose Single Song
+                        <button type="button" class="btn btn--primary tier-btn" 
+                                data-tier="single" 
+                                data-price-id="price_1SF2ZGJ2Iq1764pCKiLND2oR"
+                                data-product-id="prod_TBPOU41YRPmtrz">
+                            Choose Plan
                         </button>
                     </div>
                     
@@ -341,42 +362,45 @@
                         <div class="tier-header">
                             <h3>Day Pass</h3>
                             <div class="price">$9.99</div>
-                            <small>Best value</small>
+                            <small>24 hours</small>
                         </div>
                         <div class="tier-features">
-                            <p>✓ Unlimited surgical processing for 24h</p>
-                            <p>✓ Priority server access</p>
-                            <p>✓ Batch processing capabilities</p>
-                            <p>✓ Advanced precision controls</p>
-                            <p>✓ Multi-language support</p>
+                            <p>✓ 24hr unlimited processing</p>
+                            <p>✓ Priority processing</p>
+                            <p>✓ Advanced analytics</p>
+                            <p>✓ Batch processing</p>
                         </div>
-                        <button type="button" class="btn btn--primary tier-btn glow" data-tier="day" data-price-id="price_1S4NsTJ2Iq1764pCCbru0Aao" data-product-id="prod_T0OfjCTc3uSkEX">
-                            Choose Day Pass
+                        <button type="button" class="btn btn--primary tier-btn glow" 
+                                data-tier="day" 
+                                data-price-id="price_1S4NsTJ2Iq1764pCCbru0Aao"
+                                data-product-id="prod_T0OfjCTc3uSkEX">
+                            Choose Plan
                         </button>
                     </div>
                     
-                    <div class="tier">
+                    <div class="tier premium">
                         <div class="tier-header">
                             <h3>Monthly Pro</h3>
                             <div class="price">$29.99</div>
                             <small>per month</small>
                         </div>
                         <div class="tier-features">
-                            <p>✓ Unlimited monthly surgical processing</p>
-                            <p>✓ Priority processing queue</p>
-                            <p>✓ API access for automation</p>
-                            <p>✓ Custom profanity filters</p>
-                            <p>✓ Advanced mixing controls</p>
-                            <p>✓ Analytics dashboard</p>
+                            <p>✓ Unlimited monthly processing</p>
+                            <p>✓ Individual stem downloads</p>
+                            <p>✓ Fastest processing speed</p>
+                            <p>✓ Priority support</p>
                         </div>
-                        <button type="button" class="btn btn--primary tier-btn" data-tier="monthly" data-price-id="price_1SF2fxJ2Iq1764pCe77B6Cuo" data-product-id="prod_TBPUtS1espZUmQ">
-                            Choose Monthly Pro
+                        <button type="button" class="btn btn--primary tier-btn" 
+                                data-tier="monthly" 
+                                data-price-id="price_1SF2fxJ2Iq1764pCe77B6Cuo"
+                                data-product-id="prod_TBPUtS1espZUmQ">
+                            Choose Plan
                         </button>
                     </div>
                 </div>
                 
                 <div class="payment-security">
-                    <p>🔒 Secured by Stripe • SSL Encrypted • No audio data stored</p>
+                    <p>🔒 Secured by Stripe • SSL Encrypted • Webhook Protected</p>
                 </div>
             </div>
         </div>
@@ -392,12 +416,12 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label class="form-label" for="adminPassword">Admin Password:</label>
+                    <label class="form-label" for="adminPassword">Password:</label>
                     <input type="password" class="form-control" id="adminPassword" placeholder="Enter admin password">
                 </div>
                 <button type="button" class="btn btn--primary btn--full-width" id="adminSubmit">Unlock Admin Mode</button>
                 <div class="admin-features">
-                    <small>Admin features: Payment bypass, Processing logs, Server monitoring</small>
+                    <small>Admin features: Payment bypass, Processing logs, System monitoring</small>
                 </div>
             </div>
         </div>
@@ -412,12 +436,7 @@
                     <div class="spinner"></div>
                 </div>
                 <h3>Processing Payment...</h3>
-                <p>Securely processing your payment through Stripe...</p>
-                <div class="payment-progress">
-                    <div class="progress-step active">1. Validating payment</div>
-                    <div class="progress-step">2. Creating session</div>
-                    <div class="progress-step">3. Redirecting to Stripe</div>
-                </div>
+                <p>Please wait while we securely process your payment with webhook verification.</p>
             </div>
         </div>
     </div>
