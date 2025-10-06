@@ -1,203 +1,660 @@
-// backend.js — FWEA-I Clean Editor API (Node/Express)
-// Requires: Node 18+ (global fetch/FormData/Blob), ffmpeg, npm i express multer cors
+// Application Data
+const CONFIG = {
+    hetznerBackendUrl: "https://your-server-ip:8000",
+    cloudflareAccountId: "94ad1fffaa41132c2ff517ce46f76692",
+    supportedFormats: ["mp3", "wav", "m4a", "aac", "flac"],
+    maxFileSize: 100000000, // 100MB
+    previewDuration: 30,
+    paymentTiers: [
+        { name: "Single Song", price: "$2.99", description: "Clean one song" },
+        { name: "Day Pass", price: "$9.99", description: "Unlimited cleans for 24 hours" },
+        { name: "Monthly Pro", price: "$29.99", description: "Unlimited monthly access" }
+    ],
+    languagesSupported: [
+        "English", "Spanish", "French", "Portuguese", "Italian", 
+        "German", "Russian", "Arabic", "Chinese", "Japanese", "Korean"
+    ],
+    profanityExamples: {
+        english: ["damn", "hell", "shit", "fuck", "bitch"],
+        spanish: ["mierda", "joder", "cabrón"],
+        french: ["merde", "putain", "connard"],
+        portuguese: ["merda", "porra", "caralho"]
+    },
+    adminPassword: "admin123"
+};
 
-const express = require('express');
-const multer = require('multer');
-const cors = require('cors');
-const path = require('path');
-const fs = require('fs');
+// Application State
+let appState = {
+    currentFile: null,
+    isAdmin: false,
+    processingStep: 0,
+    audioPreview: null,
+    mutedSections: [],
+    processedAudioUrl: null,
+    previewTimeout: null
+};
 
-const { exec } = require('child_process');
-// tiny promise-wrapped exec
-const sh = (cmd) => new Promise((resolve, reject)=>{
-  exec(cmd, (e, so, se)=> e ? reject(se || e) : resolve(so));
-});
+// DOM Elements - Initialize after DOM loads
+let elements = {};
 
-// read track duration with ffprobe (seconds as Number)
-async function ffprobeDuration(src){
-  try{
-    const cmd = `ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 ${src.includes(' ') ? '"'+src+'"' : src}`;
-    const out = await sh(cmd);
-    const n = parseFloat(String(out).trim());
-    return Number.isFinite(n) ? n : 0;
-  }catch{
-    return 0;
-  }
+function initializeElements() {
+    elements = {
+        dropZone: document.getElementById('dropZone'),
+        fileInput: document.getElementById('fileInput'),
+        browseBtn: document.getElementById('browseBtn'),
+        uploadSection: document.getElementById('uploadSection'),
+        uploadProgress: document.getElementById('uploadProgress'),
+        fileName: document.getElementById('fileName'),
+        fileSize: document.getElementById('fileSize'),
+        progressFill: document.getElementById('progressFill'),
+        progressText: document.getElementById('progressText'),
+        processingSection: document.getElementById('processingSection'),
+        transcriptionPreview: document.getElementById('transcriptionPreview'),
+        detectedLanguage: document.getElementById('detectedLanguage'),
+        explicitCount: document.getElementById('explicitCount'),
+        transcriptText: document.getElementById('transcriptText'),
+        previewSection: document.getElementById('previewSection'),
+        audioPlayer: document.getElementById('audioPlayer'),
+        waveform: document.getElementById('waveform'),
+        mutedSections: document.getElementById('mutedSections'),
+        currentTime: document.getElementById('currentTime'),
+        totalTime: document.getElementById('totalTime'),
+        mutedCount: document.getElementById('mutedCount'),
+        cleanPercentage: document.getElementById('cleanPercentage'),
+        successSection: document.getElementById('successSection'),
+        downloadBtn: document.getElementById('downloadBtn'),
+        errorSection: document.getElementById('errorSection'),
+        errorMessage: document.getElementById('errorMessage'),
+        retryBtn: document.getElementById('retryBtn'),
+        paywallModal: document.getElementById('paywallModal'),
+        modalClose: document.getElementById('modalClose'),
+        adminUnlock: document.getElementById('adminUnlock'),
+        adminModal: document.getElementById('adminModal'),
+        adminModalClose: document.getElementById('adminModalClose'),
+        adminPassword: document.getElementById('adminPassword'),
+        adminSubmit: document.getElementById('adminSubmit')
+    };
 }
 
-const app = express();
-const port = process.env.PORT || 8000;
+// Utility Functions
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
 
-// Upload & static dirs
-const upload = multer({ dest: 'uploads/' });
-fs.mkdirSync('public', { recursive: true });
-fs.mkdirSync('uploads', { recursive: true });
+function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
 
-app.use(cors({ origin: '*'}));
-app.use('/public', express.static(path.join(process.cwd(), 'public')));
-
-// Basic multilingual profanity set (seed; expand later)
-const badWords = [
-  /\b(fuck|shit|bitch|asshole|cunt|motherfucker|dick|pussy|nigga|nigger|hoe|slut)\b/i,
-  /\b(puta|puto|pendejo|mierda|cabron|coño)\b/i,
-  /\b(putain|merde|salope|con)\b/i,
-  /\b(bitch|koko|vagin|kaka|manmanw|manman’w)\b/i,
-  /\b(merda|caralho|porra|puta)\b/i,
-];
-const hasBad = (txt='') => badWords.some(rx => rx.test(txt));
-
-app.get('/', (_req,res)=> res.json({ ok:true, msg:'FWEA-I Clean Editor API (Node)' }));
-
-// POST /preview  -> returns { preview_url, language, transcript, muted_spans }
-app.post('/preview', upload.single('file'), async (req, res) => {
-  let tmpFiles = [];
-  try{
-    if(!req.file) return res.status(400).json({ error:'missing_file' });
-    const src = req.file.path;
-
-    const account = process.env.CF_ACCOUNT_ID || '';
-    const token   = process.env.CF_API_TOKEN  || '';
-    if(!account || !token) return res.status(500).json({ error:'cloudflare_credentials_missing' });
-
-    // --- Work out duration & chunk plan ---
-    const dur = await ffprobeDuration(src); // seconds
-    const CHUNK_SEC = 5;      // smaller slices; keep CF body tiny
-
-    // build a tiny audio slice for [start, start+len] with configurable codec/profile
-    async function makeSlice(start, len, opts = { codec: 'libmp3lame', hz: 32000, br: '64k' }){
-      const ext = opts.codec === 'libopus' ? 'ogg' : 'mp3';
-      const out = path.join('uploads', `${Date.now().toString(36)}_${Math.round(start*1000)}.${ext}`);
-      const args = [
-        '-hide_banner','-loglevel','error','-y',
-        '-i',  src,
-        // accurate output trim (put -ss/-t after -i)
-        '-ss', String(Math.max(0, start)),
-        '-t',  String(Math.max(0.1, len)),
-        '-ac','1',
-        '-ar', String(opts.hz || 32000),
-        '-c:a', opts.codec,
-      ];
-      if (opts.codec === 'libopus') {
-        // Opus VBR at ~24k target
-        args.push('-b:a', opts.br || '24k', '-vbr', 'on', '-compression_level', '10');
-      } else {
-        // MP3 CBR target
-        args.push('-b:a', opts.br || '64k');
-      }
-      args.push(out);
-      const cmd = `ffmpeg ${args.map(a=> a.includes(' ')?`"${a}"`:a).join(' ')}`;
-      await sh(cmd);
-      let st;
-      try { st = fs.statSync(out); } catch(e){ st = { size: 0 }; }
-      console.log(`[slice] ${path.basename(out)} len=${len.toFixed(3)}s size=${(st.size/1024).toFixed(1)}KB codec=${opts.codec} hz=${opts.hz} br=${opts.br}`);
-      if (!st.size || st.size < 4096) throw new Error(`slice_too_small: ${out} (${st.size} bytes)`);
-      tmpFiles.push(out);
-      return out;
-    }
-
-    // Send a buffer to Cloudflare Whisper and return JSON
-    async function whisperFile(filepath){
-      const buf = fs.readFileSync(filepath);
-      console.log(`[upload] ${path.basename(filepath)} bytes=${buf.length}`);
-      const fd = new FormData();
-      fd.append('input', JSON.stringify({ response_format:'verbose_json' }));
-      const mime = filepath.endsWith('.ogg') ? 'audio/ogg' : 'audio/mpeg';
-      fd.append('file', new Blob([buf], { type: mime }), path.basename(filepath));
-      const url = `https://api.cloudflare.com/client/v4/accounts/${account}/ai/run/@cf/openai/whisper`;
-      const cf  = await fetch(url, { method:'POST', headers:{ Authorization:`Bearer ${token}` }, body: fd });
-      const j   = await cf.json().catch(()=>({}));
-      if(!cf.ok){
-        return { ok:false, error:{ status: cf.status, body: j, file: path.basename(filepath), bytes: buf.length } };
-      }
-      return { ok:true, json: j };
-    }
-
-    // --- Chunk, transcribe, offset segments ---
-    const segments = []; // full-song
-    let language = 'auto';
-    const total = Math.max(0, dur) || CHUNK_SEC; // if ffprobe failed, do at least one chunk
-
-    for(let start=0; start < total; start += CHUNK_SEC){
-      const len = Math.min(CHUNK_SEC, total - start);
-
-      // try a ladder of smaller encodes / durations if CF says "Request is too large"
-      let slice = await makeSlice(start, len, { codec:'libmp3lame', hz:32000, br:'64k' });
-      let r = await whisperFile(slice);
-
-      const tooLarge = (err) => {
-        try {
-          const b = err && err.body ? (err.body.errors || err.body.error || err.body) : null;
-          const s = JSON.stringify(b||err);
-          return /too large/i.test(s) || /request.*large/i.test(s);
-        } catch { return false; }
-      };
-
-      if(!r.ok && tooLarge(r.error)){
-        try {
-          slice = await makeSlice(start, Math.min(len, 3), { codec:'libmp3lame', hz:24000, br:'48k' });
-          r = await whisperFile(slice);
-        } catch(e){}
-      }
-      if(!r.ok && tooLarge(r.error)){
-        try {
-          slice = await makeSlice(start, Math.min(len, 2), { codec:'libopus', hz:24000, br:'24k' });
-          r = await whisperFile(slice);
-        } catch(e){}
-      }
-      if(!r.ok){
-        return res.status(502).json({ error:'whisper_failed', detail:r.error, chunk: { start, len, retried:true } });
-      }
-      const result = r.json.result || r.json;
-      if(result.language) language = result.language;
-      const segs = Array.isArray(result.segments) ? result.segments : [];
-      for(const s of segs){
-        const st = Number(s.start)||0, en = Number(s.end)||0;
-        segments.push({ start: st + start, end: en + start, text: s.text||'' });
-      }
-    }
-
-    // --- Build profanity spans across the entire song ---
-    const spans = [];
-    for(const s of segments){ if(hasBad(s.text)) spans.push({ start: Math.max(0,s.start), end: Math.max(0,s.end), reason:'profanity' }); }
-    spans.sort((a,b)=> a.start-b.start);
-    const merged = [];
-    for(const s of spans){
-      if(!merged.length || s.start > merged[merged.length-1].end){ merged.push({...s}); }
-      else { merged[merged.length-1].end = Math.max(merged[merged.length-1].end, s.end); }
-    }
-
-    // --- Render 30s preview from the ORIGINAL upload ---
-    const id = Date.now().toString(36);
-    const out = path.join('public', `${id}.mp3`);
-
-    // Only mute spans that intersect 0–30s window
-    const PREVIEW_T = 30;
-    const toMute = merged
-      .filter(s => s.end > 0 && s.start < PREVIEW_T)
-      .map(s => ({ start: Math.max(0,s.start), end: Math.min(PREVIEW_T, s.end) }))
-      .filter(s => s.end > s.start);
-    const filter = toMute.map(s=>`volume=enable='between(t,${s.start.toFixed(3)},${s.end.toFixed(3)})':volume=0`).join(',');
-
-    const args = ['-hide_banner','-loglevel','error','-y','-i', src, '-t', String(PREVIEW_T)];
-    if(filter) args.push('-af', filter);
-    args.push('-codec:a','libmp3lame','-b:a','192k', out);
-    await sh(`ffmpeg ${args.map(a=> a.includes(' ')?`"${a}"`:a).join(' ')}`);
-
-    return res.json({
-      preview_url: `/public/${path.basename(out)}`,
-      language,
-      transcript: segments.map(s=>s.text||'').join(' ').trim(),
-      muted_spans: merged,
+function showSection(sectionId) {
+    // Hide all sections
+    document.querySelectorAll('.upload-section, .processing-section, .preview-section, .success-section, .error-section').forEach(section => {
+        section.classList.add('hidden');
     });
-  }catch(err){
-    console.error(err);
-    res.status(500).json({ error:'preview_failed', detail:String(err) });
-  }finally{
-    // cleanup
-    try{ if(req.file?.path) fs.unlink(req.file.path, ()=>{}); }catch(_){ }
-    for(const f of tmpFiles){ try{ fs.unlink(f, ()=>{}); }catch(_){ }
+    // Show target section
+    const targetSection = document.getElementById(sectionId);
+    if (targetSection) {
+        targetSection.classList.remove('hidden');
     }
-  }
+}
+
+function showError(message) {
+    if (elements.errorMessage) {
+        elements.errorMessage.textContent = message;
+        showSection('errorSection');
+    }
+}
+
+function resetApp() {
+    appState.currentFile = null;
+    appState.processingStep = 0;
+    appState.audioPreview = null;
+    appState.mutedSections = [];
+    appState.processedAudioUrl = null;
+    
+    if (appState.previewTimeout) {
+        clearTimeout(appState.previewTimeout);
+    }
+    
+    if (elements.uploadProgress) {
+        elements.uploadProgress.classList.add('hidden');
+    }
+    if (elements.transcriptionPreview) {
+        elements.transcriptionPreview.classList.add('hidden');
+    }
+    showSection('uploadSection');
+    
+    // Reset progress
+    if (elements.progressFill && elements.progressText) {
+        elements.progressFill.style.width = '0%';
+        elements.progressText.textContent = '0%';
+    }
+}
+
+// File Handling
+function validateFile(file) {
+    const fileExtension = file.name.split('.').pop().toLowerCase();
+    
+    if (!CONFIG.supportedFormats.includes(fileExtension)) {
+        throw new Error(`Unsupported file format. Please use: ${CONFIG.supportedFormats.join(', ').toUpperCase()}`);
+    }
+    
+    if (file.size > CONFIG.maxFileSize) {
+        throw new Error(`File size exceeds ${formatFileSize(CONFIG.maxFileSize)} limit.`);
+    }
+    
+    return true;
+}
+
+function handleFileSelect(file) {
+    try {
+        validateFile(file);
+        appState.currentFile = file;
+        
+        if (elements.fileName && elements.fileSize) {
+            elements.fileName.textContent = file.name;
+            elements.fileSize.textContent = formatFileSize(file.size);
+        }
+        if (elements.uploadProgress) {
+            elements.uploadProgress.classList.remove('hidden');
+        }
+        
+        // Start upload simulation
+        simulateUpload();
+    } catch (error) {
+        showError(error.message);
+    }
+}
+
+function simulateUpload() {
+    let progress = 0;
+    const uploadInterval = setInterval(() => {
+        progress += Math.random() * 15;
+        if (progress >= 100) {
+            progress = 100;
+            clearInterval(uploadInterval);
+            setTimeout(() => startProcessing(), 500);
+        }
+        
+        if (elements.progressFill && elements.progressText) {
+            elements.progressFill.style.width = progress + '%';
+            elements.progressText.textContent = Math.round(progress) + '%';
+        }
+    }, 200);
+}
+
+// Processing Simulation
+function startProcessing() {
+    showSection('processingSection');
+    appState.processingStep = 1;
+    updateProcessingStep(1);
+    
+    // Step 1: Analyzing audio
+    setTimeout(() => {
+        updateProcessingStep(2);
+        setTimeout(() => {
+            updateProcessingStep(3);
+            setTimeout(() => {
+                updateProcessingStep(4);
+                setTimeout(() => {
+                    completeProcessing();
+                }, 2000);
+            }, 2000);
+        }, 3000);
+    }, 2000);
+}
+
+function updateProcessingStep(step) {
+    appState.processingStep = step;
+    
+    // Update step indicators
+    for (let i = 1; i <= 4; i++) {
+        const stepElement = document.getElementById(`step${i}`);
+        if (stepElement) {
+            stepElement.classList.remove('active', 'completed');
+            
+            if (i < step) {
+                stepElement.classList.add('completed');
+            } else if (i === step) {
+                stepElement.classList.add('active');
+            }
+        }
+    }
+    
+    // Show transcription preview at step 3
+    if (step >= 3) {
+        showTranscriptionPreview();
+    }
+}
+
+function showTranscriptionPreview() {
+    if (elements.transcriptionPreview) {
+        elements.transcriptionPreview.classList.remove('hidden');
+    }
+    
+    // Simulate language detection
+    const detectedLang = CONFIG.languagesSupported[Math.floor(Math.random() * CONFIG.languagesSupported.length)];
+    if (elements.detectedLanguage) {
+        elements.detectedLanguage.textContent = detectedLang;
+    }
+    
+    // Generate fake transcript with explicit content
+    const sampleText = generateSampleTranscript(detectedLang.toLowerCase());
+    const explicitWords = findExplicitContent(sampleText, detectedLang.toLowerCase());
+    
+    if (elements.explicitCount) {
+        elements.explicitCount.textContent = `${explicitWords.length} instances`;
+    }
+    if (elements.transcriptText) {
+        elements.transcriptText.innerHTML = highlightExplicitContent(sampleText, explicitWords);
+    }
+    
+    // Store muted sections for preview
+    appState.mutedSections = generateMutedSections(explicitWords.length);
+}
+
+function generateSampleTranscript(language) {
+    const transcripts = {
+        english: "Yeah, I'm walking down the street, feeling so damn good, nothing can stop me now, this is my fucking time to shine, bitch please don't mess with me today",
+        spanish: "Caminando por la calle, me siento muy bien, mierda no me pueden parar, este es mi momento de brillar",
+        french: "Je marche dans la rue, je me sens si bien, putain rien ne peut m'arrêter maintenant, c'est mon moment",
+        portuguese: "Caminhando pela rua, me sentindo muito bem, merda nada pode me parar agora, este é meu momento"
+    };
+    
+    return transcripts[language] || transcripts.english;
+}
+
+function findExplicitContent(text, language) {
+    const profanity = CONFIG.profanityExamples[language] || CONFIG.profanityExamples.english;
+    const words = [];
+    
+    profanity.forEach(word => {
+        if (text.toLowerCase().includes(word)) {
+            words.push(word);
+        }
+    });
+    
+    return words;
+}
+
+function highlightExplicitContent(text, explicitWords) {
+    let highlightedText = text;
+    explicitWords.forEach(word => {
+        const regex = new RegExp(word, 'gi');
+        highlightedText = highlightedText.replace(regex, `<span class="explicit-word">${word}</span>`);
+    });
+    return highlightedText;
+}
+
+function generateMutedSections(explicitCount) {
+    const sections = [];
+    for (let i = 0; i < explicitCount; i++) {
+        sections.push({
+            start: Math.random() * 25, // Random position in first 25 seconds
+            duration: 1 + Math.random() * 2 // 1-3 second duration
+        });
+    }
+    return sections.sort((a, b) => a.start - b.start);
+}
+
+function completeProcessing() {
+    // Generate audio preview (simulate with original file)
+    const audioUrl = URL.createObjectURL(appState.currentFile);
+    if (elements.audioPlayer) {
+        elements.audioPlayer.src = audioUrl;
+    }
+    appState.audioPreview = audioUrl;
+    
+    // Update stats
+    if (elements.mutedCount) {
+        elements.mutedCount.textContent = appState.mutedSections.length;
+    }
+    const cleanPercent = Math.max(85, 100 - (appState.mutedSections.length * 3));
+    if (elements.cleanPercentage) {
+        elements.cleanPercentage.textContent = cleanPercent + '%';
+    }
+    
+    // Render muted sections on waveform
+    renderMutedSections();
+    
+    showSection('previewSection');
+    
+    // Start preview timeout (30 seconds)
+    if (!appState.isAdmin) {
+        appState.previewTimeout = setTimeout(() => {
+            if (elements.audioPlayer) {
+                elements.audioPlayer.pause();
+            }
+            showPaywall();
+        }, CONFIG.previewDuration * 1000);
+    }
+}
+
+function renderMutedSections() {
+    if (!elements.mutedSections) return;
+    
+    elements.mutedSections.innerHTML = '';
+    
+    appState.mutedSections.forEach(section => {
+        const div = document.createElement('div');
+        div.className = 'muted-section';
+        div.style.left = (section.start / CONFIG.previewDuration * 100) + '%';
+        div.style.width = (section.duration / CONFIG.previewDuration * 100) + '%';
+        elements.mutedSections.appendChild(div);
+    });
+}
+
+// Audio Player Functions
+function setupAudioPlayer() {
+    if (!elements.audioPlayer) return;
+    
+    elements.audioPlayer.addEventListener('timeupdate', () => {
+        const currentTime = elements.audioPlayer.currentTime;
+        if (elements.currentTime) {
+            elements.currentTime.textContent = formatTime(currentTime);
+        }
+        
+        // Mute during explicit sections
+        let shouldMute = false;
+        appState.mutedSections.forEach(section => {
+            if (currentTime >= section.start && currentTime <= section.start + section.duration) {
+                shouldMute = true;
+            }
+        });
+        
+        elements.audioPlayer.muted = shouldMute;
+    });
+    
+    elements.audioPlayer.addEventListener('loadedmetadata', () => {
+        const duration = Math.min(elements.audioPlayer.duration, CONFIG.previewDuration);
+        if (elements.totalTime) {
+            elements.totalTime.textContent = formatTime(duration);
+        }
+    });
+}
+
+// Paywall Functions
+function showPaywall() {
+    if (elements.paywallModal) {
+        elements.paywallModal.classList.remove('hidden');
+    }
+}
+
+function hidePaywall() {
+    if (elements.paywallModal) {
+        elements.paywallModal.classList.add('hidden');
+    }
+}
+
+function processPurchase(tier) {
+    // Simulate payment processing
+    const loadingText = 'Processing payment...';
+    const tierButtons = document.querySelectorAll('.tier-btn');
+    
+    tierButtons.forEach(btn => {
+        if (btn.dataset.tier === tier) {
+            btn.textContent = loadingText;
+            btn.disabled = true;
+        }
+    });
+    
+    setTimeout(() => {
+        hidePaywall();
+        unlockFullVersion();
+    }, 2000);
+}
+
+function unlockFullVersion() {
+    if (appState.previewTimeout) {
+        clearTimeout(appState.previewTimeout);
+    }
+    
+    // Remove time limit from audio
+    if (elements.audioPlayer) {
+        elements.audioPlayer.currentTime = 0;
+    }
+    
+    // Generate download URL (simulate processed file)
+    appState.processedAudioUrl = appState.audioPreview; // In real app, this would be the cleaned version
+    
+    showSection('successSection');
+}
+
+// Admin Functions
+function showAdminModal() {
+    if (elements.adminModal) {
+        elements.adminModal.classList.remove('hidden');
+        if (elements.adminPassword) {
+            elements.adminPassword.focus();
+        }
+    }
+}
+
+function hideAdminModal() {
+    if (elements.adminModal) {
+        elements.adminModal.classList.add('hidden');
+        if (elements.adminPassword) {
+            elements.adminPassword.value = '';
+        }
+    }
+}
+
+function processAdminUnlock() {
+    if (!elements.adminPassword) return;
+    
+    const password = elements.adminPassword.value;
+    
+    if (password === CONFIG.adminPassword) {
+        appState.isAdmin = true;
+        hideAdminModal();
+        
+        if (elements.paywallModal && !elements.paywallModal.classList.contains('hidden')) {
+            hidePaywall();
+        }
+        
+        unlockFullVersion();
+    } else {
+        elements.adminPassword.style.borderColor = 'var(--color-error)';
+        elements.adminPassword.placeholder = 'Incorrect password';
+        elements.adminPassword.value = '';
+        
+        setTimeout(() => {
+            elements.adminPassword.style.borderColor = '';
+            elements.adminPassword.placeholder = 'Enter admin password';
+        }, 2000);
+    }
+}
+
+// Download Function
+function downloadCleanedAudio() {
+    if (appState.processedAudioUrl) {
+        const a = document.createElement('a');
+        a.href = appState.processedAudioUrl;
+        a.download = `cleaned_${appState.currentFile.name}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+}
+
+// Event Listeners
+function setupEventListeners() {
+    if (!elements.dropZone) return;
+    
+    // File upload events
+    elements.dropZone.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (elements.fileInput) {
+            elements.fileInput.click();
+        }
+    });
+    
+    if (elements.browseBtn) {
+        elements.browseBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (elements.fileInput) {
+                elements.fileInput.click();
+            }
+        });
+    }
+    
+    if (elements.fileInput) {
+        elements.fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+    }
+    
+    // Drag and drop events
+    elements.dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        elements.dropZone.classList.add('drag-over');
+    });
+    
+    elements.dropZone.addEventListener('dragleave', () => {
+        elements.dropZone.classList.remove('drag-over');
+    });
+    
+    elements.dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        elements.dropZone.classList.remove('drag-over');
+        
+        if (e.dataTransfer.files.length > 0) {
+            handleFileSelect(e.dataTransfer.files[0]);
+        }
+    });
+    
+    // Modal events
+    if (elements.modalClose) {
+        elements.modalClose.addEventListener('click', hidePaywall);
+    }
+    
+    if (elements.adminModalClose) {
+        elements.adminModalClose.addEventListener('click', hideAdminModal);
+    }
+    
+    // Click outside modal to close
+    if (elements.paywallModal) {
+        elements.paywallModal.addEventListener('click', (e) => {
+            if (e.target === elements.paywallModal) {
+                hidePaywall();
+            }
+        });
+    }
+    
+    if (elements.adminModal) {
+        elements.adminModal.addEventListener('click', (e) => {
+            if (e.target === elements.adminModal) {
+                hideAdminModal();
+            }
+        });
+    }
+    
+    // Payment tier buttons
+    document.querySelectorAll('.tier-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            processPurchase(btn.dataset.tier);
+        });
+    });
+    
+    // Admin unlock
+    if (elements.adminUnlock) {
+        elements.adminUnlock.addEventListener('click', (e) => {
+            e.preventDefault();
+            showAdminModal();
+        });
+    }
+    
+    if (elements.adminSubmit) {
+        elements.adminSubmit.addEventListener('click', processAdminUnlock);
+    }
+    
+    if (elements.adminPassword) {
+        elements.adminPassword.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                processAdminUnlock();
+            }
+        });
+    }
+    
+    // Download button
+    if (elements.downloadBtn) {
+        elements.downloadBtn.addEventListener('click', downloadCleanedAudio);
+    }
+    
+    // Retry button
+    if (elements.retryBtn) {
+        elements.retryBtn.addEventListener('click', resetApp);
+    }
+    
+    // Setup audio player
+    setupAudioPlayer();
+}
+
+// Keyboard shortcuts
+function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        // ESC to close modals
+        if (e.key === 'Escape') {
+            if (elements.paywallModal && !elements.paywallModal.classList.contains('hidden')) {
+                hidePaywall();
+            }
+            if (elements.adminModal && !elements.adminModal.classList.contains('hidden')) {
+                hideAdminModal();
+            }
+        }
+        
+        // Space to play/pause audio
+        if (e.key === ' ' && elements.audioPlayer && elements.audioPlayer.src) {
+            e.preventDefault();
+            if (elements.audioPlayer.paused) {
+                elements.audioPlayer.play();
+            } else {
+                elements.audioPlayer.pause();
+            }
+        }
+    });
+}
+
+// Initialize Application
+function initializeApp() {
+    // Initialize DOM elements first
+    initializeElements();
+    
+    // Setup event listeners and shortcuts
+    setupEventListeners();
+    setupKeyboardShortcuts();
+    
+    // Show upload section initially
+    showSection('uploadSection');
+    
+    console.log('FWEA-I Omnilingual Clean Version Editor initialized');
+}
+
+// Start the application when DOM is loaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+    initializeApp();
+}
+
+// Error handling for uncaught errors
+window.addEventListener('error', (e) => {
+    console.error('Application error:', e.error);
+    showError('An unexpected error occurred. Please refresh the page and try again.');
 });
 
-app.listen(port, ()=> console.log(`🚀 Clean Editor API on http://0.0.0.0:${port}`));
+// Service worker registration (for offline functionality)
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        // In a real app, you would register a service worker here
+        console.log('Service worker support detected');
+    });
+}
