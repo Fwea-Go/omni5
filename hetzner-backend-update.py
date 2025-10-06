@@ -1,9 +1,10 @@
-# Enhanced Hetzner Backend for FWEA-I Omnilingual Clean Editor
-# Updated to work with Cloudflare Workers and Stripe integration
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks
+# Enhanced FWEA-I Backend with Vocal Isolation & Echo Fill
+# Advanced audio processing with Spleeter integration
+
+from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
 import os
 import io
 import json
@@ -13,10 +14,17 @@ import subprocess
 import uuid
 import requests
 import asyncio
-from typing import Optional, Dict, List
+import librosa
+import soundfile as sf
+import numpy as np
+from typing import Optional, Dict, List, Tuple
 import logging
 from datetime import datetime, timedelta
 import stripe
+from spleeter.separator import Separator
+from pydub import AudioSegment
+from scipy.signal import find_peaks
+import tensorflow as tf
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -24,9 +32,9 @@ logger = logging.getLogger(__name__)
 
 # Initialize FastAPI
 app = FastAPI(
-    title="FWEA-I Omnilingual Clean Editor Backend",
-    description="AI-powered audio cleaning service",
-    version="2.0.0"
+    title="FWEA-I Enhanced Omnilingual Clean Editor Backend",
+    description="AI-powered vocal isolation and audio cleaning service",
+    version="3.0.0"
 )
 
 # CORS configuration
@@ -40,383 +48,543 @@ app.add_middleware(
 
 # Configuration
 CF_ACCOUNT_ID = os.getenv("CF_ACCOUNT_ID", "94ad1fffaa41132c2ff517ce46f76692")
-CF_API_TOKEN = os.getenv("CF_API_TOKEN", "PZX0tilNCKHnZ-X4LD-iB6GhzpdcJuNlLONIz1ZE")
+CF_API_TOKEN = os.getenv("CF_API_TOKEN", "your-cf-api-token")
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "sk_live_...")
 HETZNER_SERVER_URL = "https://178.156.190.229:8000"
 
 # Initialize Stripe
 stripe.api_key = STRIPE_SECRET_KEY
 
-# Whisper model configuration
-WHISPER_MODEL = "@cf/openai/whisper"
+# Initialize Spleeter for vocal separation
+separator = Separator('spleeter:2stems-16kHz')
 
 # Storage directories
 os.makedirs("uploads", exist_ok=True)
 os.makedirs("processed", exist_ok=True)
-os.makedirs("temp", exist_ok=True)
+os.makedirs("vocals", exist_ok=True)
+os.makedirs("instrumentals", exist_ok=True)
+os.makedirs("cleaned", exist_ok=True)
+os.makedirs("previews", exist_ok=True)
 
-# Session storage (in production, use Redis or database)
+# Session storage
 active_sessions: Dict[str, Dict] = {}
 
-# Enhanced multilingual profanity patterns
+# Enhanced profanity patterns with timing context
 PROFANITY_PATTERNS = {
     "english": [
-        r"\b(fuck|shit|bitch|asshole|cunt|motherfucker|dick|pussy|damn|hell|crap|ass|bastard)\b",
-        r"\b(fucking|shitting|bitching|damning)\b"
+        r"\b(fuck|fucking|fucked|fucker)\b",
+        r"\b(shit|shitting|shitty)\b", 
+        r"\b(bitch|bitches|bitching)\b",
+        r"\b(damn|damned|damning)\b",
+        r"\b(hell|hellish)\b",
+        r"\b(ass|asses|asshole)\b",
+        r"\b(crap|crappy)\b",
+        r"\b(piss|pissed|pissing)\b"
     ],
     "spanish": [
-        r"\b(puta|puto|pendejo|mierda|cabrón|coño|joder|hijo\s+de\s+puta)\b",
-        r"\b(pinche|chingada|mamada|verga|culero)\b"
+        r"\b(puta|putas|puto|putos)\b",
+        r"\b(mierda|mierdas)\b",
+        r"\b(joder|jodido|jodiendo)\b",
+        r"\b(cabrón|cabrones)\b",
+        r"\b(pendejo|pendejos|pendejada)\b",
+        r"\b(chingar|chingada|chingado)\b"
     ],
     "french": [
-        r"\b(putain|merde|salope|con|connard|bordel|enculé)\b",
-        r"\b(foutre|chier|baiser|niquer)\b"
+        r"\b(putain|putains)\b",
+        r"\b(merde|merdes)\b",
+        r"\b(connard|connards|connasse)\b",
+        r"\b(salope|salopes)\b",
+        r"\b(bordel|bordels)\b"
     ],
     "portuguese": [
-        r"\b(merda|caralho|porra|puta|filho\s+da\s+puta|cu|buceta)\b",
-        r"\b(foder|cagar|porra|desgraça)\b"
-    ],
-    "german": [
-        r"\b(scheiße|arschloch|hure|fotze|hurensohn|fick|verdammt)\b",
-        r"\b(ficken|scheißen|hurerei)\b"
-    ],
-    "italian": [
-        r"\b(merda|cazzo|puttana|stronzo|figlio\s+di\s+puttana|vaffanculo)\b",
-        r"\b(fottere|cagare|incazzare)\b"
+        r"\b(merda|merdas)\b",
+        r"\b(caralho|caralhos)\b",
+        r"\b(porra|porras)\b",
+        r"\b(puta|putas|puto|putos)\b",
+        r"\b(foder|fodido|fodendo)\b"
     ]
 }
 
-def detect_language(text: str) -> str:
-    """Enhanced language detection"""
-    patterns = {
-        "english": r"\b(the|and|or|but|in|on|at|to|for|of|with|by|is|are|was|were)\b",
-        "spanish": r"\b(el|la|los|las|de|en|un|una|por|para|con|sin|es|son|fue|fueron)\b",
-        "french": r"\b(le|la|les|de|du|des|un|une|dans|pour|avec|sans|est|sont|était)\b",
-        "portuguese": r"\b(o|a|os|as|de|em|um|uma|para|com|sem|por|é|são|foi|eram)\b",
-        "german": r"\b(der|die|das|den|dem|des|ein|eine|und|oder|in|mit|ist|sind|war)\b",
-        "italian": r"\b(il|la|lo|gli|le|di|da|in|con|su|per|tra|è|sono|era|erano)\b"
-    }
-    
-    max_matches = 0
-    detected_lang = "english"
-    
-    for lang, pattern in patterns.items():
-        matches = len(re.findall(pattern, text.lower()))
-        if matches > max_matches:
-            max_matches = matches
-            detected_lang = lang
-    
-    return detected_lang
+class VocalSeparator:
+    """Advanced vocal separation using Spleeter"""
 
-def detect_profanity(text: str, language: str = "english") -> List[Dict]:
-    """Enhanced profanity detection with timestamps"""
-    patterns = PROFANITY_PATTERNS.get(language, PROFANITY_PATTERNS["english"])
-    found_words = []
-    
-    for pattern in patterns:
-        matches = re.finditer(pattern, text, re.IGNORECASE)
-        for match in matches:
-            found_words.append({
-                "word": match.group(),
-                "start_pos": match.start(),
-                "end_pos": match.end(),
-                "confidence": 0.95
-            })
-    
-    return found_words
+    def __init__(self):
+        self.separator = Separator('spleeter:2stems-16kHz')
 
-async def call_cloudflare_whisper(audio_data: bytes) -> Dict:
-    """Call Cloudflare Workers AI Whisper model"""
-    url = f"https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT_ID}/ai/run/{WHISPER_MODEL}"
-    
-    headers = {
-        "Authorization": f"Bearer {CF_API_TOKEN}",
-        "Content-Type": "application/json"
-    }
-    
-    # Convert audio to required format
-    audio_array = list(audio_data)
-    
-    payload = {
-        "audio": audio_array
-    }
-    
-    try:
-        response = requests.post(url, json=payload, headers=headers, timeout=60)
-        response.raise_for_status()
-        return response.json()
-    except Exception as e:
-        logger.error(f"Cloudflare Whisper API error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
-
-def chunk_audio(audio_data: bytes, chunk_size: int = 1024*1024) -> List[bytes]:
-    """Split large audio files into chunks"""
-    chunks = []
-    for i in range(0, len(audio_data), chunk_size):
-        chunks.append(audio_data[i:i + chunk_size])
-    return chunks
-
-async def process_large_audio(audio_data: bytes) -> Dict:
-    """Process large audio files with chunking"""
-    if len(audio_data) <= 25 * 1024 * 1024:  # 25MB limit for single call
-        return await call_cloudflare_whisper(audio_data)
-    
-    # Chunk processing for large files
-    chunks = chunk_audio(audio_data, chunk_size=20*1024*1024)  # 20MB chunks
-    transcriptions = []
-    
-    for i, chunk in enumerate(chunks):
-        logger.info(f"Processing chunk {i+1}/{len(chunks)}")
+    async def separate_vocals(self, audio_path: str, output_dir: str) -> Dict[str, str]:
+        """Separate vocals from instrumental using Spleeter"""
         try:
-            result = await call_cloudflare_whisper(chunk)
-            transcriptions.append(result.get("result", {}).get("text", ""))
-        except Exception as e:
-            logger.warning(f"Chunk {i+1} failed: {str(e)}")
-            transcriptions.append("")
-    
-    # Combine transcriptions
-    combined_text = " ".join(filter(None, transcriptions))
-    
-    return {
-        "result": {
-            "text": combined_text,
-            "word_count": len(combined_text.split())
-        },
-        "success": True
-    }
+            logger.info(f"Starting vocal separation for: {audio_path}")
 
-@app.post("/preview")
-async def preview_audio(audio: UploadFile = File(...)):
-    """Process audio file and generate preview with explicit content detection"""
-    
-    try:
-        # Generate session ID
-        session_id = str(uuid.uuid4())
-        
-        # Validate file format
-        valid_formats = ['mp3', 'wav', 'm4a', 'aac', 'flac', 'ogg', 'wma']
-        file_ext = audio.filename.split('.')[-1].lower()
-        
-        if file_ext not in valid_formats:
-            raise HTTPException(status_code=400, detail=f"Unsupported format. Supported: {', '.join(valid_formats)}")
-        
-        # Read audio data
-        audio_data = await audio.read()
-        
-        # Store session info
-        active_sessions[session_id] = {
-            "filename": audio.filename,
-            "file_size": len(audio_data),
-            "format": file_ext,
-            "status": "processing",
-            "created_at": datetime.utcnow(),
-            "audio_data": audio_data
-        }
-        
-        # Process with Whisper AI
-        logger.info(f"Starting transcription for session {session_id}")
-        whisper_result = await process_large_audio(audio_data)
-        
-        if not whisper_result.get("success", True):
-            raise HTTPException(status_code=500, detail="Transcription failed")
-        
-        transcript = whisper_result.get("result", {}).get("text", "")
-        word_count = whisper_result.get("result", {}).get("word_count", 0)
-        
-        # Detect language
-        detected_language = detect_language(transcript)
-        
-        # Detect profanity
-        profanity_found = detect_profanity(transcript, detected_language)
-        
-        # Update session
-        active_sessions[session_id].update({
-            "transcript": transcript,
-            "language": detected_language,
-            "profanity": profanity_found,
-            "word_count": word_count,
-            "status": "ready_for_preview"
-        })
-        
-        return JSONResponse({
-            "success": True,
-            "session_id": session_id,
-            "transcript": transcript[:500] + "..." if len(transcript) > 500 else transcript,
-            "language": {
-                "detected": detected_language,
-                "confidence": 0.85  # Mock confidence
-            },
-            "explicit_content": {
-                "found": len(profanity_found) > 0,
-                "count": len(profanity_found),
-                "words": [item["word"] for item in profanity_found[:5]]  # Limit for preview
-            },
-            "word_count": word_count,
-            "preview_ready": True,
-            "file_info": {
-                "name": audio.filename,
-                "size": len(audio_data),
-                "format": file_ext
+            # Load audio with librosa for preprocessing
+            y, sr = librosa.load(audio_path, sr=16000)  # 16kHz for Spleeter
+
+            # Convert to format expected by Spleeter
+            audio_data = np.expand_dims(y, axis=1)  # Add channel dimension
+
+            # Perform separation
+            sources = self.separator.separate(audio_data)
+
+            # Extract vocals and accompaniment
+            vocals = sources['vocals']
+            accompaniment = sources['accompaniment'] 
+
+            # Save separated tracks
+            vocal_path = os.path.join(output_dir, 'vocals.wav')
+            instrumental_path = os.path.join(output_dir, 'instrumental.wav')
+
+            sf.write(vocal_path, vocals, sr)
+            sf.write(instrumental_path, accompaniment, sr)
+
+            logger.info(f"Vocal separation completed. Saved to: {output_dir}")
+
+            return {
+                'vocals': vocal_path,
+                'instrumental': instrumental_path,
+                'sample_rate': sr,
+                'quality_score': self._calculate_separation_quality(vocals, accompaniment)
             }
-        })
-        
-    except Exception as e:
-        logger.error(f"Preview processing error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/clean")
-async def clean_audio(session_data: Dict):
-    """Generate clean version of audio file"""
-    
+        except Exception as e:
+            logger.error(f"Vocal separation error: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Vocal separation failed: {str(e)}")
+
+    def _calculate_separation_quality(self, vocals: np.ndarray, instrumental: np.ndarray) -> float:
+        """Calculate quality score for vocal separation"""
+        # Simple quality metric based on energy distribution
+        vocal_energy = np.sum(vocals ** 2)
+        instrumental_energy = np.sum(instrumental ** 2)
+        total_energy = vocal_energy + instrumental_energy
+
+        # Quality based on energy balance (ideal around 0.3-0.7 for vocals)
+        vocal_ratio = vocal_energy / total_energy if total_energy > 0 else 0
+        quality = 1.0 - abs(vocal_ratio - 0.5) * 2  # Normalize to 0-1
+
+        return max(0.1, min(1.0, quality))  # Clamp between 0.1 and 1.0
+
+class EchoFillProcessor:
+    """Advanced echo fill processing for seamless explicit word removal"""
+
+    def __init__(self):
+        self.sample_rate = 44100
+
+    async def apply_echo_fill(
+        self, 
+        vocal_audio: np.ndarray,
+        explicit_segments: List[Dict],
+        pre_context_duration: float = 0.5,
+        echo_delay: float = 0.25,
+        echo_decay: float = 0.4
+    ) -> Tuple[np.ndarray, List[Dict]]:
+        """Apply echo fill to cover explicit content"""
+
+        try:
+            logger.info(f"Applying echo fill to {len(explicit_segments)} segments")
+
+            processed_audio = vocal_audio.copy()
+            echo_fills_applied = []
+
+            for segment in explicit_segments:
+                start_sample = int(segment['start_time'] * self.sample_rate)
+                end_sample = int(segment['end_time'] * self.sample_rate)
+
+                # Extract pre-context for echo generation
+                context_start = max(0, start_sample - int(pre_context_duration * self.sample_rate))
+                context_audio = vocal_audio[context_start:start_sample]
+
+                if len(context_audio) > 0:
+                    # Generate echo with delay and decay
+                    echo_audio = self._generate_echo(
+                        context_audio, 
+                        echo_delay, 
+                        echo_decay,
+                        target_length=end_sample - start_sample
+                    )
+
+                    # Apply echo fill to explicit segment
+                    if len(echo_audio) >= (end_sample - start_sample):
+                        processed_audio[start_sample:end_sample] = echo_audio[:end_sample - start_sample]
+
+                        echo_fills_applied.append({
+                            'segment_start': segment['start_time'],
+                            'segment_end': segment['end_time'],
+                            'context_start': context_start / self.sample_rate,
+                            'context_end': start_sample / self.sample_rate,
+                            'echo_delay': echo_delay,
+                            'echo_decay': echo_decay,
+                            'word': segment.get('word', 'unknown')
+                        })
+
+                        logger.info(f"Applied echo fill for word: {segment.get('word', 'unknown')}")
+                    else:
+                        # Fallback: silence with fade
+                        processed_audio[start_sample:end_sample] *= np.linspace(1.0, 0.0, end_sample - start_sample)
+                        logger.warning(f"Used silence fallback for word: {segment.get('word', 'unknown')}")
+                else:
+                    # Fallback: silence
+                    processed_audio[start_sample:end_sample] = 0
+                    logger.warning(f"No context available for echo fill: {segment.get('word', 'unknown')}")
+
+            return processed_audio, echo_fills_applied
+
+        except Exception as e:
+            logger.error(f"Echo fill processing error: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Echo fill processing failed: {str(e)}")
+
+    def _generate_echo(
+        self, 
+        context_audio: np.ndarray, 
+        delay: float, 
+        decay: float,
+        target_length: int
+    ) -> np.ndarray:
+        """Generate echo effect from context audio"""
+
+        delay_samples = int(delay * self.sample_rate)
+
+        # Create echo by repeating and decaying the context
+        echo_audio = np.zeros(target_length)
+        context_length = len(context_audio)
+
+        # Apply multiple echo repetitions with decay
+        echo_strength = 1.0
+        current_pos = 0
+
+        while current_pos < target_length and echo_strength > 0.01:
+            # Calculate how much of the context to use
+            available_space = target_length - current_pos
+            use_length = min(context_length, available_space)
+
+            if use_length > 0:
+                # Apply decayed echo
+                echo_audio[current_pos:current_pos + use_length] += (
+                    context_audio[:use_length] * echo_strength
+                )
+
+                # Move to next echo position and reduce strength
+                current_pos += delay_samples
+                echo_strength *= decay
+
+        return echo_audio
+
+class AdvancedAudioProcessor:
+    """Main audio processing class combining vocal separation and echo fill"""
+
+    def __init__(self):
+        self.vocal_separator = VocalSeparator()
+        self.echo_processor = EchoFillProcessor()
+
+    async def process_complete_audio(
+        self,
+        session_id: str,
+        audio_file_path: str,
+        explicit_words: List[Dict],
+        settings: Dict = None
+    ) -> Dict:
+        """Complete audio processing pipeline"""
+
+        try:
+            session_dir = os.path.join("processed", session_id)
+            os.makedirs(session_dir, exist_ok=True)
+
+            # Step 1: Separate vocals from instrumental
+            logger.info(f"Step 1: Separating vocals for session {session_id}")
+            separation_result = await self.vocal_separator.separate_vocals(
+                audio_file_path, session_dir
+            )
+
+            # Step 2: Load vocal track for processing
+            vocal_audio, sr = librosa.load(separation_result['vocals'], sr=44100)
+            instrumental_audio, _ = librosa.load(separation_result['instrumental'], sr=44100)
+
+            # Step 3: Convert explicit words to time segments
+            explicit_segments = self._convert_words_to_segments(explicit_words)
+
+            # Step 4: Apply echo fill to vocal track
+            logger.info(f"Step 4: Applying echo fill for session {session_id}")
+            processed_vocals, echo_fills = await self.echo_processor.apply_echo_fill(
+                vocal_audio, 
+                explicit_segments,
+                pre_context_duration=settings.get('pre_context', 0.5) if settings else 0.5,
+                echo_delay=settings.get('echo_delay', 0.25) if settings else 0.25,
+                echo_decay=settings.get('echo_decay', 0.4) if settings else 0.4
+            )
+
+            # Step 5: Combine processed vocals with original instrumental
+            logger.info(f"Step 5: Combining tracks for session {session_id}")
+
+            # Ensure both tracks are the same length
+            min_length = min(len(processed_vocals), len(instrumental_audio))
+            processed_vocals = processed_vocals[:min_length]
+            instrumental_audio = instrumental_audio[:min_length]
+
+            # Mix vocals and instrumental
+            final_audio = processed_vocals * 0.7 + instrumental_audio * 0.8  # Balanced mix
+
+            # Step 6: Save final processed audio
+            final_path = os.path.join(session_dir, 'final_clean.wav')
+            sf.write(final_path, final_audio, 44100)
+
+            # Step 7: Generate preview (first 30 seconds)
+            preview_samples = min(30 * 44100, len(final_audio))
+            preview_audio = final_audio[:preview_samples]
+            preview_path = os.path.join(session_dir, 'preview.wav')
+            sf.write(preview_path, preview_audio, 44100)
+
+            return {
+                'session_id': session_id,
+                'final_audio_path': final_path,
+                'preview_path': preview_path,
+                'vocal_path': separation_result['vocals'],
+                'instrumental_path': separation_result['instrumental'],
+                'separation_quality': separation_result['quality_score'],
+                'echo_fills_applied': echo_fills,
+                'explicit_segments_processed': len(explicit_segments),
+                'final_duration': len(final_audio) / 44100,
+                'preview_duration': len(preview_audio) / 44100
+            }
+
+        except Exception as e:
+            logger.error(f"Complete audio processing error: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Audio processing failed: {str(e)}")
+
+    def _convert_words_to_segments(self, explicit_words: List[Dict]) -> List[Dict]:
+        """Convert word-based explicit content to time segments"""
+        segments = []
+
+        for word_info in explicit_words:
+            # Extract timing information (format may vary based on Whisper output)
+            if isinstance(word_info, dict):
+                start_time = word_info.get('start', 0)
+                end_time = word_info.get('end', start_time + 1)  # Default 1 second
+                word = word_info.get('word', 'unknown')
+            else:
+                # Fallback for simpler format
+                start_time = 0
+                end_time = 1
+                word = str(word_info)
+
+            segments.append({
+                'start_time': float(start_time),
+                'end_time': float(end_time),
+                'word': word,
+                'confidence': word_info.get('confidence', 0.9) if isinstance(word_info, dict) else 0.9
+            })
+
+        return segments
+
+# Initialize processors
+audio_processor = AdvancedAudioProcessor()
+
+@app.post("/separate")
+async def separate_vocal_instrumental(session_data: Dict):
+    """Endpoint for vocal/instrumental separation"""
+
     session_id = session_data.get("session_id")
     if not session_id or session_id not in active_sessions:
         raise HTTPException(status_code=404, detail="Session not found")
-    
+
     session = active_sessions[session_id]
-    
+
     try:
-        # Simulate audio cleaning process
-        # In production, implement actual audio processing with FFmpeg
-        logger.info(f"Cleaning audio for session {session_id}")
-        
-        session["status"] = "cleaning"
-        
-        # Simulate processing time
-        await asyncio.sleep(2)
-        
-        # Mock cleaned audio generation
-        # In production, process the actual audio with muted sections
-        cleaned_file_path = f"processed/{session_id}_clean.{session['format']}"
-        
-        # For demo, copy original file
-        with open(cleaned_file_path, "wb") as f:
+        logger.info(f"Starting vocal separation for session {session_id}")
+
+        # Create session directory
+        session_dir = os.path.join("processed", session_id)
+        os.makedirs(session_dir, exist_ok=True)
+
+        # Save uploaded audio to temporary file
+        temp_audio_path = os.path.join(session_dir, f"original.{session['format']}")
+        with open(temp_audio_path, "wb") as f:
             f.write(session["audio_data"])
-        
+
+        # Perform vocal separation
+        separation_result = await audio_processor.vocal_separator.separate_vocals(
+            temp_audio_path, session_dir
+        )
+
+        # Update session with separation results
         session.update({
-            "status": "completed",
-            "cleaned_file": cleaned_file_path,
-            "processing_time": 45  # seconds
+            "status": "separated",
+            "vocal_path": separation_result['vocals'],
+            "instrumental_path": separation_result['instrumental'],
+            "separation_quality": separation_result['quality_score'],
+            "separation_completed_at": datetime.utcnow()
         })
-        
+
         return JSONResponse({
             "success": True,
             "session_id": session_id,
-            "status": "completed",
-            "download_ready": True,
-            "processing_time": 45,
-            "file_size": session["file_size"]
+            "separation_quality": separation_result['quality_score'],
+            "vocal_track_ready": True,
+            "instrumental_preserved": True,
+            "message": "Vocal separation completed successfully"
         })
-        
+
     except Exception as e:
-        logger.error(f"Audio cleaning error: {str(e)}")
-        session["status"] = "error"
+        logger.error(f"Vocal separation error: {str(e)}")
+        session["status"] = "separation_failed"
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/download/{session_id}")
-async def download_clean_audio(session_id: str):
-    """Download cleaned audio file"""
-    
+@app.post("/clean-advanced")
+async def advanced_clean_with_echo_fill(session_data: Dict):
+    """Advanced cleaning with echo fill processing"""
+
+    session_id = session_data.get("session_id")
+    explicit_words = session_data.get("explicit_words", [])
+    settings = session_data.get("settings", {})
+
+    if not session_id or session_id not in active_sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    session = active_sessions[session_id]
+
+    if not session.get("vocal_path"):
+        raise HTTPException(status_code=400, detail="Vocal separation not completed")
+
+    try:
+        logger.info(f"Starting advanced cleaning for session {session_id}")
+
+        session["status"] = "cleaning"
+
+        # Get original audio path
+        session_dir = os.path.join("processed", session_id)
+        original_path = os.path.join(session_dir, f"original.{session['format']}")
+
+        # Process complete audio with echo fill
+        processing_result = await audio_processor.process_complete_audio(
+            session_id, original_path, explicit_words, settings
+        )
+
+        # Update session with results
+        session.update({
+            "status": "completed",
+            "final_audio_path": processing_result['final_audio_path'],
+            "preview_path": processing_result['preview_path'],
+            "echo_fills_applied": processing_result['echo_fills_applied'],
+            "explicit_segments_processed": processing_result['explicit_segments_processed'],
+            "processing_completed_at": datetime.utcnow()
+        })
+
+        return JSONResponse({
+            "success": True,
+            "session_id": session_id,
+            "cleaning_completed": True,
+            "instrumental_preserved": True,
+            "echo_fills_applied": len(processing_result['echo_fills_applied']),
+            "explicit_words_processed": processing_result['explicit_segments_processed'],
+            "final_duration": processing_result['final_duration'],
+            "preview_duration": processing_result['preview_duration'],
+            "separation_quality": processing_result['separation_quality'],
+            "download_ready": True,
+            "preview_ready": True,
+            "message": "Advanced cleaning with echo fill completed successfully"
+        })
+
+    except Exception as e:
+        logger.error(f"Advanced cleaning error: {str(e)}")
+        session["status"] = "cleaning_failed"
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/download-advanced/{session_id}")
+async def download_advanced_audio(session_id: str, audio_type: str = "final"):
+    """Download processed audio with vocal isolation"""
+
     if session_id not in active_sessions:
         raise HTTPException(status_code=404, detail="Session not found")
-    
+
     session = active_sessions[session_id]
-    
+
     if session["status"] != "completed":
-        raise HTTPException(status_code=400, detail="Audio not ready for download")
-    
-    cleaned_file = session.get("cleaned_file")
-    if not cleaned_file or not os.path.exists(cleaned_file):
-        raise HTTPException(status_code=404, detail="Cleaned file not found")
-    
-    original_name = session["filename"]
-    clean_name = f"clean_{original_name}"
-    
+        raise HTTPException(status_code=400, detail="Processing not completed")
+
+    # Determine which file to download
+    file_path = None
+    filename = None
+
+    if audio_type == "final":
+        file_path = session.get("final_audio_path")
+        filename = f"clean_{session['filename']}"
+    elif audio_type == "preview":
+        file_path = session.get("preview_path")
+        filename = f"preview_{session['filename']}"
+    elif audio_type == "vocals":
+        file_path = session.get("vocal_path")
+        filename = f"vocals_{session['filename']}"
+    elif audio_type == "instrumental":
+        file_path = session.get("instrumental_path")
+        filename = f"instrumental_{session['filename']}"
+    else:
+        raise HTTPException(status_code=400, detail="Invalid audio type")
+
+    if not file_path or not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Audio file not found")
+
     return FileResponse(
-        cleaned_file,
+        file_path,
         media_type="application/octet-stream",
-        filename=clean_name,
-        headers={"Content-Disposition": f"attachment; filename={clean_name}"}
+        filename=filename,
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
-@app.get("/status/{session_id}")
-async def get_session_status(session_id: str):
-    """Get processing status for session"""
-    
+@app.get("/preview-stream/{session_id}")
+async def stream_preview(session_id: str):
+    """Stream preview audio for real-time playback"""
+
     if session_id not in active_sessions:
         raise HTTPException(status_code=404, detail="Session not found")
-    
+
     session = active_sessions[session_id]
-    
-    return JSONResponse({
-        "session_id": session_id,
-        "status": session["status"],
-        "progress": {
-            "transcription": 100 if "transcript" in session else 0,
-            "cleaning": 100 if session["status"] == "completed" else 50 if session["status"] == "cleaning" else 0,
-            "overall": 100 if session["status"] == "completed" else 75 if session["status"] == "cleaning" else 25
-        },
-        "created_at": session["created_at"].isoformat(),
-        "file_info": {
-            "name": session["filename"],
-            "size": session["file_size"],
-            "format": session["format"]
+    preview_path = session.get("preview_path")
+
+    if not preview_path or not os.path.exists(preview_path):
+        raise HTTPException(status_code=404, detail="Preview not ready")
+
+    def generate():
+        with open(preview_path, "rb") as audio_file:
+            while True:
+                chunk = audio_file.read(8192)
+                if not chunk:
+                    break
+                yield chunk
+
+    return StreamingResponse(
+        generate(),
+        media_type="audio/wav",
+        headers={
+            "Content-Disposition": "inline",
+            "Accept-Ranges": "bytes"
         }
-    })
+    )
 
-@app.delete("/session/{session_id}")
-async def cleanup_session(session_id: str):
-    """Clean up session data and temporary files"""
-    
-    if session_id not in active_sessions:
-        return JSONResponse({"message": "Session not found"})
-    
-    session = active_sessions[session_id]
-    
-    # Clean up files
-    cleaned_file = session.get("cleaned_file")
-    if cleaned_file and os.path.exists(cleaned_file):
-        os.remove(cleaned_file)
-    
-    # Remove from active sessions
-    del active_sessions[session_id]
-    
-    return JSONResponse({"message": "Session cleaned up successfully"})
+# Health check with advanced features
+@app.get("/health-advanced")
+async def health_check_advanced():
+    """Health check for advanced features"""
 
-# Background task to clean up old sessions
-async def cleanup_old_sessions():
-    """Clean up sessions older than 24 hours"""
-    while True:
-        try:
-            current_time = datetime.utcnow()
-            expired_sessions = []
-            
-            for session_id, session in active_sessions.items():
-                if current_time - session["created_at"] > timedelta(hours=24):
-                    expired_sessions.append(session_id)
-            
-            for session_id in expired_sessions:
-                await cleanup_session(session_id)
-                logger.info(f"Cleaned up expired session: {session_id}")
-            
-            # Sleep for 1 hour
-            await asyncio.sleep(3600)
-            
-        except Exception as e:
-            logger.error(f"Cleanup task error: {str(e)}")
-            await asyncio.sleep(300)  # Sleep 5 minutes on error
+    # Test Spleeter availability
+    spleeter_available = True
+    try:
+        test_separator = Separator('spleeter:2stems-16kHz')
+    except Exception:
+        spleeter_available = False
 
-@app.on_event("startup")
-async def startup_event():
-    """Start background cleanup task"""
-    asyncio.create_task(cleanup_old_sessions())
-    logger.info("FWEA-I Backend started successfully")
-
-@app.get("/health")
-async def health_check():
-    """Health check endpoint"""
     return {
         "status": "healthy",
+        "features": {
+            "vocal_separation": spleeter_available,
+            "echo_fill_processing": True,
+            "advanced_cleaning": True,
+            "real_time_preview": True,
+            "multi_format_support": True
+        },
         "active_sessions": len(active_sessions),
+        "processing_capabilities": {
+            "max_file_size": "100MB",
+            "supported_formats": ["mp3", "wav", "m4a", "aac", "flac"],
+            "languages_supported": len(PROFANITY_PATTERNS),
+            "echo_fill_enabled": True
+        },
         "timestamp": datetime.utcnow().isoformat()
     }
 
