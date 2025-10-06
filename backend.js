@@ -20,7 +20,7 @@ const CONFIG = {
         french: ["merde", "putain", "connard"],
         portuguese: ["merda", "porra", "caralho"]
     },
-    adminPassword: "admin123"
+    adminPassword: "fwea.ip"
 };
 
 // Application State
