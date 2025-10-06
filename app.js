@@ -1,704 +1,373 @@
+// app.js — FWEA-I Clean Audio Editor (externalized)
+// -------------------------------------------------
+// Assumes your HTML IDs/classes match the provided fwea-final-frontend.html
 
-// FWEA-I FINAL WORKING CLOUDFLARE WORKER
-// Fixed: Real audio processing, Working Stripe, Lyrics extraction for $29.99 tier
+console.log('🎯 FWEA-I Final Clean Audio Editor Loading...');
 
-export default {
-  async fetch(request, env, ctx) {
-    const corsHeaders = {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key, X-Session-ID, Stripe-Signature',
-      'Access-Control-Max-Age': '86400',
-      'Access-Control-Allow-Credentials': 'false'
-    };
-
-    if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 200, headers: corsHeaders });
-    }
-
-    const url = new URL(request.url);
-
-    const HETZNER = (env && env.HETZNER_SERVER)
-      ? env.HETZNER_SERVER.replace(/\/$/, '')
-      : 'http://178.156.190.229:8000';
-
-    const path = url.pathname;
-
-    console.log(`[${new Date().toISOString()}] FINAL ${request.method} ${path}`);
-
-    try {
-      switch (path) {
-        case '/upload':
-          return handleFinalUpload(request, env, corsHeaders);
-        case '/process':
-          return handleRealAudioProcessing(request, env, corsHeaders);
-        case '/health':
-          return handleHealthCheck(request, env, corsHeaders);
-        case '/webhook/stripe':
-          return handleStripeWebhook(request, env, corsHeaders);
-        case '/create-payment':
-          return handleCreatePayment(request, env, corsHeaders);
-        case '/download':
-          return handleDownload(request, env, corsHeaders);
-        case '/download-lyrics':
-          return handleLyricsDownload(request, env, corsHeaders);
-        case '/preview':
-          return handlePreview(request, env, corsHeaders);
-        case '/status':
-          return handleStatus(request, env, corsHeaders);
-        default:
-          return errorResponse('Endpoint not found', 404, corsHeaders);
-      }
-    } catch (error) {
-      console.error('Worker error:', error);
-      return errorResponse(`Processing error: ${error.message}`, 500, corsHeaders);
-    }
-  }
+const CONFIG = {
+  workerUrl: 'https://omni-clean-5.fweago-flavaz.workers.dev',
+  stripePublishableKey: 'pk_live_51RW06LJ2Iq1764pCr02p7yLia0VqBgUcRfG7Qm5OWFNAwFZcexIs9iBB3B9s22elcQzQjuAUMBxpeUhwcm8hsDf900NbCbF3Vw'
 };
 
-// REAL AUDIO PROCESSING with accurate profanity detection
-async function handleRealAudioProcessing(request, env, corsHeaders) {
-  const HETZNER = (env && env.HETZNER_SERVER)
-    ? env.HETZNER_SERVER.replace(/\/$/, '')
-    : 'http://178.156.190.229:8000';
+let appState = {
+  currentSection: 'upload',
+  sessionId: null,
+  audioFile: null,
+  processingData: null,
+  userPlan: null
+};
+
+// DOM Elements
+const elements = {
+  // Sections
+  uploadSection: document.getElementById('uploadSection'),
+  processingSection: document.getElementById('processingSection'),
+  resultsSection: document.getElementById('resultsSection'),
+  paymentSection: document.getElementById('paymentSection'),
+  downloadSection: document.getElementById('downloadSection'),
+
+  // Upload
+  dropZone: document.getElementById('dropZone'),
+  browseBtn: document.getElementById('browseBtn'),
+  fileInput: document.getElementById('fileInput'),
+
+  // Processing
+  progressFill: document.getElementById('progressFill'),
+  progressText: document.getElementById('progressText'),
+
+  // Results
+  wordsDetected: document.getElementById('wordsDetected'),
+  cleaningAccuracy: document.getElementById('cleaningAccuracy'),
+  processingTime: document.getElementById('processingTime'),
+  audioPreview: document.getElementById('audioPreview'),
+
+  // Download
+  downloadClean: document.getElementById('downloadClean'),
+  downloadVocals: document.getElementById('downloadVocals'),
+  downloadInstrumental: document.getElementById('downloadInstrumental'),
+  downloadLyrics: document.getElementById('downloadLyrics'),
+  premiumFeatures: document.getElementById('premiumFeatures'),
+  processAnother: document.getElementById('processAnother'),
+
+  // Modal
+  modal: document.getElementById('modal'),
+  modalTitle: document.getElementById('modalTitle'),
+  modalMessage: document.getElementById('modalMessage'),
+  modalClose: document.getElementById('modalClose')
+};
+
+// App init
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🚀 Initializing FWEA-I Final Clean Audio Editor...');
+  setupEventListeners();
+  handleURLParameters();
+  checkStripeReturn();   // Reveal downloads after Stripe returns with ?success=true
+  pingHealthFooter();    // Optional: shows Online/Offline in footer if present
+});
+
+// -------------------- Event Wiring --------------------
+
+function setupEventListeners() {
+  // Upload handlers
+  elements.dropZone.addEventListener('click', () => elements.fileInput.click());
+  elements.browseBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    elements.fileInput.click();
+  });
+  elements.fileInput.addEventListener('change', handleFileSelect);
+
+  // Drag and drop
+  elements.dropZone.addEventListener('dragover', handleDragOver);
+  elements.dropZone.addEventListener('dragleave', handleDragLeave);
+  elements.dropZone.addEventListener('drop', handleFileDrop);
+
+  // Payment buttons
+  document.querySelectorAll('.btn[data-plan]').forEach(btn => {
+    btn.addEventListener('click', handlePayment);
+  });
+
+  // Download buttons (optional elements exist depending on plan)
+  elements.downloadClean?.addEventListener('click', () => handleDownload('clean'));
+  elements.downloadVocals?.addEventListener('click', () => handleDownload('vocals'));
+  elements.downloadInstrumental?.addEventListener('click', () => handleDownload('instrumental'));
+  elements.downloadLyrics?.addEventListener('click', () => handleDownload('lyrics'));
+  elements.processAnother?.addEventListener('click', resetApp);
+
+  // Modal
+  elements.modalClose?.addEventListener('click', () => hideModal());
+}
+
+// -------------------- File Handling --------------------
+
+function handleDragOver(e) {
+  e.preventDefault();
+  elements.dropZone.classList.add('drag-over');
+}
+function handleDragLeave(e) {
+  e.preventDefault();
+  elements.dropZone.classList.remove('drag-over');
+}
+function handleFileDrop(e) {
+  e.preventDefault();
+  elements.dropZone.classList.remove('drag-over');
+  const files = e.dataTransfer.files;
+  if (files.length > 0) processFile(files[0]);
+}
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+}
+
+async function processFile(file) {
+  if (!validateFile(file)) return;
+
+  appState.audioFile = file;
+  showSection('processing');
+
   try {
-    const { sessionId } = await request.json();
+    // Upload
+    setProgress(5, 'Uploading...');
+    const uploadResult = await uploadFile(file);
+    appState.sessionId = uploadResult.sessionId;
 
-    const sessionData = await getSessionData(env, sessionId);
-    if (!sessionData) {
-      return errorResponse('Session not found', 404, corsHeaders);
-    }
+    // Start processing
+    setProgress(20, 'Uploaded. Starting analysis...');
+    await startProcessing();
 
-    console.log(`Starting REAL audio processing for session: ${sessionId}`);
-
-    // Update session status
-    sessionData.status = 'processing';
-    await env.AUDIO_SESSIONS.put(sessionId, JSON.stringify(sessionData));
-
-    // Get original audio from R2
-    const audioObject = await env.AUDIO_FILES.get(`${sessionId}/original.${sessionData.format}`);
-    if (!audioObject) {
-      return errorResponse('Original audio not found in storage', 404, corsHeaders);
-    }
-    const audioBuffer = await audioObject.arrayBuffer();
-
-    // Forward to Hetzner backend for REAL processing
-    try {
-      const hetznerResponse = await fetch(`${HETZNER}/process`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'FWEA-I-Worker/1.0'
-        },
-        body: JSON.stringify({
-          session_id: sessionId,
-          audio_data: Array.from(new Uint8Array(audioBuffer)),
-          format: sessionData.format,
-          real_processing: true
-        }),
-        signal: AbortSignal.timeout(120000) // 2 minute timeout
-      });
-
-      if (!hetznerResponse.ok) {
-        throw new Error(`Hetzner processing failed: ${hetznerResponse.status}`);
-      }
-
-      const processingResult = await hetznerResponse.json();
-
-      // Update session with real processing results
-      sessionData.status = 'completed';
-      sessionData.processingResult = processingResult;
-      sessionData.completedAt = new Date().toISOString();
-
-      await env.AUDIO_SESSIONS.put(sessionId, JSON.stringify(sessionData));
-
-      return successResponse({
-        sessionId,
-        processing: {
-          status: 'completed',
-          detectedWords: processingResult.profanity_detection?.total_detected || 0,
-          cleaningAccuracy: processingResult.cleaning_results?.cleaning_accuracy || 0,
-          processingTime: processingResult.processing_time || 0,
-          wordList: processingResult.profanity_detection?.detected_words || [],
-          lyrics: processingResult.transcription?.text || '',
-          instrumental_preservation: 100
-        },
-        preview: {
-          available: true,
-          url: `/preview?session=${sessionId}`,
-          duration: 30
-        },
-        paymentRequired: true,
-        message: 'REAL audio processing completed successfully'
-      }, corsHeaders);
-
-    } catch (error) {
-      console.error('Hetzner processing error:', error);
-
-      // Fallback to mock processing with REAL patterns
-      const mockResult = await performMockRealProcessing(audioBuffer, sessionData.format);
-
-      sessionData.status = 'completed';
-      sessionData.processingResult = mockResult;
-      sessionData.completedAt = new Date().toISOString();
-
-      await env.AUDIO_SESSIONS.put(sessionId, JSON.stringify(sessionData));
-
-      return successResponse({
-        sessionId,
-        processing: mockResult.processing,
-        preview: {
-          available: true,
-          url: `/preview?session=${sessionId}`,
-          duration: 30
-        },
-        paymentRequired: true,
-        message: 'Audio processing completed (fallback mode)'
-      }, corsHeaders);
-    }
+    // Poll status
+    await pollStatus(appState.sessionId);
 
   } catch (error) {
-    console.error('Audio processing error:', error);
-    return errorResponse(`Processing failed: ${error.message}`, 500, corsHeaders);
+    console.error(error);
+    showModal('Upload/Processing Error', error.message || 'Something went wrong during processing.');
+    showSection('upload');
   }
 }
 
-// Mock processing with REAL profanity patterns
-async function performMockRealProcessing(audioBuffer, format) {
-  // Simulate realistic processing time
-  await new Promise(resolve => setTimeout(resolve, 3000));
-
-  // REAL profanity detection patterns
-  const realProfanityWords = [
-    { word: 'fucking', startTime: 12.4, endTime: 12.9, confidence: 0.98 },
-    { word: 'shit', startTime: 28.7, endTime: 29.1, confidence: 0.96 },
-    { word: 'damn', startTime: 45.2, endTime: 45.6, confidence: 0.94 },
-    { word: 'hell', startTime: 67.8, endTime: 68.2, confidence: 0.92 },
-    { word: 'ass', startTime: 89.3, endTime: 89.7, confidence: 0.90 }
-  ];
-
-  // Generate realistic lyrics
-  const sampleLyrics = `[Verse 1]
-Walking down the street on a sunny day
-Thinking 'bout the things I want to say
-Life's been hard but I'm doing fine
-Just trying to make it through this time
-
-[Chorus] 
-Don't give up on your dreams tonight
-Everything's gonna be alright
-Keep your head up, stay strong
-This is where you belong
-
-[Verse 2]
-Sometimes the world can bring you down
-Turn your smile into a frown
-But I believe in better days
-When the sun will shine through the haze
-
-[Bridge]
-Through the storm and through the rain
-Through the joy and through the pain
-We keep moving, we keep trying
-Never stop, never stop fighting
-
-[Chorus]
-Don't give up on your dreams tonight
-Everything's gonna be alright
-Keep your head up, stay strong
-This is where you belong`;
-
-  return {
-    processing: {
-      status: 'completed',
-      detectedWords: realProfanityWords.length,
-      cleaningAccuracy: 0.97,
-      processingTime: 8.5,
-      wordList: realProfanityWords,
-      lyrics: sampleLyrics,
-      instrumental_preservation: 100
-    },
-    profanity_detection: {
-      detected_words: realProfanityWords,
-      total_detected: realProfanityWords.length,
-      detection_accuracy: 0.97
-    },
-    transcription: {
-      text: sampleLyrics.replace(/\[(.*?)\]/g, '').trim()
-    },
-    cleaning_results: {
-      cleaning_accuracy: 0.97,
-      instrumental_preservation: 100
-    },
-    processing_time: 8.5
-  };
+function validateFile(file) {
+  const allowed = ['mp3', 'wav', 'm4a', 'aac', 'flac', 'ogg'];
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  if (!allowed.includes(ext)) {
+    showModal('Unsupported Format', `.${ext} is not supported. Try: ${allowed.join(', ')}`);
+    return false;
+  }
+  const maxBytes = 100 * 1024 * 1024;
+  if (file.size > maxBytes) {
+    showModal('File Too Large', 'Maximum size is 100MB.');
+    return false;
+  }
+  return true;
 }
 
-// WORKING STRIPE INTEGRATION
-async function handleCreatePayment(request, env, corsHeaders) {
-  try {
-    const { sessionId, plan } = await request.json();
-
-    if (!sessionId || !plan) {
-      return errorResponse('Missing required payment parameters', 400, corsHeaders);
-    }
-
-    const sessionData = await getSessionData(env, sessionId);
-    if (!sessionData) {
-      return errorResponse('Audio session not found', 404, corsHeaders);
-    }
-
-    // Correct Stripe product/price mappings
-    const stripePlans = {
-      single: {
-        priceId: 'price_1SF2ZGJ2Iq1764pCKiLND2oR',
-        productId: 'prod_TBPOU41YRPmtrz',
-        amount: 299
-      },
-      day: {
-        priceId: 'price_1S4NsTJ2Iq1764pCCbru0Aao', 
-        productId: 'prod_T0OfjCTc3uSkEX',
-        amount: 999
-      },
-      monthly: {
-        priceId: 'price_1SF2fxJ2Iq1764pCe77B6Cuo',
-        productId: 'prod_TBPUtS1espZUmQ',
-        amount: 2999
-      }
-    };
-
-    const stripePlan = stripePlans[plan];
-    if (!stripePlan) {
-      return errorResponse('Invalid plan selected', 400, corsHeaders);
-    }
-
-    console.log(`Creating Stripe payment for session: ${sessionId}, plan: ${plan}`);
-
-    // Create checkout session with Stripe API
-    const checkoutData = {
-      mode: 'payment',
-      line_items: [{
-        price: stripePlan.priceId,
-        quantity: 1
-      }],
-      success_url: `https://fwea-i.com/omni5?success=true&session_id={CHECKOUT_SESSION_ID}&plan=${plan}&fwea_session=${sessionId}`,
-      cancel_url: `https://fwea-i.com/omni5?canceled=true`,
-      metadata: {
-        fwea_session_id: sessionId,
-        product_id: stripePlan.productId,
-        plan: plan,
-        audio_file: sessionData.fileName || 'unknown',
-        processing_completed: 'true'
-      },
-      payment_intent_data: {
-        metadata: {
-          fwea_session: sessionId,
-          plan: plan
-        }
-      }
-    };
-
-    // Store payment intent
-    sessionData.paymentIntent = {
-      priceId: stripePlan.priceId,
-      productId: stripePlan.productId,
-      plan: plan,
-      amount: stripePlan.amount,
-      status: 'pending',
-      createdAt: new Date().toISOString()
-    };
-
-    await env.AUDIO_SESSIONS.put(sessionId, JSON.stringify(sessionData));
-
-    // In production, use actual Stripe API
-    const mockCheckoutUrl = `https://checkout.stripe.com/c/pay/cs_live_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
-
-    return successResponse({
-      sessionId,
-      checkoutUrl: mockCheckoutUrl,
-      plan,
-      amount: stripePlan.amount,
-      priceId: stripePlan.priceId,
-      productId: stripePlan.productId,
-      message: 'Payment session created successfully'
-    }, corsHeaders);
-
-  } catch (error) {
-    console.error('Payment creation error:', error);
-    return errorResponse(`Payment creation failed: ${error.message}`, 500, corsHeaders);
+async function uploadFile(file) {
+  const fd = new FormData();
+  fd.append('audio', file);
+  const res = await fetch(`${CONFIG.workerUrl}/upload`, { method: 'POST', body: fd });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.error || 'Upload failed');
   }
+  return data;
 }
 
-// STRIPE WEBHOOK HANDLER
-async function handleStripeWebhook(request, env, corsHeaders) {
-  try {
-    const body = await request.text();
-    const sig = request.headers.get('stripe-signature');
-
-    console.log('Processing Stripe webhook...');
-
-    let event;
-    try {
-      event = JSON.parse(body);
-    } catch (e) {
-      return errorResponse('Invalid JSON payload', 400, corsHeaders);
-    }
-
-    console.log('Webhook event type:', event.type);
-
-    switch (event.type) {
-      case 'checkout.session.completed':
-        await handlePaymentCompleted(event.data.object, env);
-        break;
-      case 'payment_intent.succeeded':
-        await handlePaymentSucceeded(event.data.object, env);
-        break;
-      default:
-        console.log('Unhandled webhook event type:', event.type);
-    }
-
-    return successResponse({ received: true, processed: event.type }, corsHeaders);
-
-  } catch (error) {
-    console.error('Webhook error:', error);
-    return errorResponse(`Webhook processing failed: ${error.message}`, 400, corsHeaders);
-  }
-}
-
-async function handlePaymentCompleted(session, env) {
-  const fweaSessionId = session.metadata?.fwea_session_id;
-  if (!fweaSessionId) return;
-
-  const sessionData = await getSessionData(env, fweaSessionId);
-  if (!sessionData) return;
-
-  sessionData.paymentStatus = 'completed';
-  sessionData.stripeSessionId = session.id;
-  sessionData.plan = session.metadata?.plan || 'unknown';
-  sessionData.paidAt = new Date().toISOString();
-
-  await env.AUDIO_SESSIONS.put(fweaSessionId, JSON.stringify(sessionData));
-
-  console.log(`Payment completed for FWEA session: ${fweaSessionId}, plan: ${sessionData.plan}`);
-}
-
-// LYRICS DOWNLOAD (Only for $29.99 tier)
-async function handleLyricsDownload(request, env, corsHeaders) {
-  try {
-    const url = new URL(request.url);
-    const sessionId = url.searchParams.get('session');
-
-    if (!sessionId) {
-      return errorResponse('Session ID required', 400, corsHeaders);
-    }
-
-    const sessionData = await getSessionData(env, sessionId);
-    if (!sessionData) {
-      return errorResponse('Session not found', 404, corsHeaders);
-    }
-
-    // Check if user has Monthly Pro subscription ($29.99)
-    if (sessionData.paymentStatus !== 'completed' || sessionData.plan !== 'monthly') {
-      return errorResponse('Lyrics download is only available for Monthly Pro subscribers ($29.99)', 403, corsHeaders);
-    }
-
-    const lyrics = sessionData.processingResult?.transcription?.text || 
-                   sessionData.processingResult?.processing?.lyrics || 
-                   'Lyrics not available for this audio file.';
-
-    // Format lyrics for download
-    const lyricsContent = `FWEA-I Clean Audio Editor - Extracted Lyrics
-Song: ${sessionData.fileName}
-Processed: ${sessionData.completedAt || new Date().toISOString()}
-Plan: Monthly Pro ($29.99)
-
-========================================
-
-${lyrics}
-
-========================================
-
-© 2025 FWEA-I Precision Audio Processing
-For support: support@fwea-i.com`;
-
-    return new Response(lyricsContent, {
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'text/plain; charset=utf-8',
-        'Content-Disposition': `attachment; filename="lyrics_${sessionData.fileName.replace(/\.[^/.]+$/, '')}.txt"`
-      }
-    });
-
-  } catch (error) {
-    console.error('Lyrics download error:', error);
-    return errorResponse(`Lyrics download failed: ${error.message}`, 500, corsHeaders);
-  }
-}
-
-// Enhanced download with subscription validation
-async function handleDownload(request, env, corsHeaders) {
-  const HETZNER = (env && env.HETZNER_SERVER)
-    ? env.HETZNER_SERVER.replace(/\/$/, '')
-    : 'http://178.156.190.229:8000';
-  const url = new URL(request.url);
-  const sessionId = url.searchParams.get('session');
-  const type = url.searchParams.get('type') || 'clean';
-
-  if (!sessionId) {
-    return errorResponse('Session ID required', 400, corsHeaders);
-  }
-
-  const sessionData = await getSessionData(env, sessionId);
-  if (!sessionData) {
-    return errorResponse('Session not found', 404, corsHeaders);
-  }
-
-  // Check payment status
-  if (sessionData.paymentStatus !== 'completed') {
-    return errorResponse('Payment required for download', 402, corsHeaders);
-  }
-
-  // Check subscription level for individual stems
-  if ((type === 'vocals' || type === 'instrumental') && sessionData.plan !== 'monthly') {
-    return errorResponse('Individual stem downloads are only available for Monthly Pro subscribers ($29.99)', 403, corsHeaders);
-  }
-
-  // Get audio file from storage
-  const fileName = getDownloadFileName(sessionData, type);
-  const audioObject = await env.AUDIO_FILES.get(`${sessionId}/${fileName}`);
-
-  if (!audioObject) {
-    const proxyUrl = `${HETZNER}/download?session=${encodeURIComponent(sessionId)}&type=${encodeURIComponent(type)}`;
-    try {
-      const proxyRes = await fetch(proxyUrl);
-      if (proxyRes.ok) {
-        return new Response(proxyRes.body, {
-          headers: {
-            ...corsHeaders,
-            'Content-Type': proxyRes.headers.get('content-type') || 'application/octet-stream',
-            'Content-Disposition': `attachment; filename="fwea_${type}_${sessionData.fileName}`
-          }
-        });
-      }
-    } catch (e) {
-      console.error('Hetzner proxy download failed:', e);
-    }
-    return errorResponse(`Audio file not found: ${type}`, 404, corsHeaders);
-  }
-
-  return new Response(audioObject.body, {
-    headers: {
-      ...corsHeaders,
-      'Content-Type': 'application/octet-stream',
-      'Content-Disposition': `attachment; filename="fwea_${type}_${sessionData.fileName}"`
-    }
+async function startProcessing() {
+  if (!appState.sessionId) throw new Error('Missing session id');
+  setProgress(30, 'Sending to processor...');
+  await fetch(`${CONFIG.workerUrl}/process`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId: appState.sessionId })
   });
 }
 
-// FIXED health check
-async function handleHealthCheck(request, env, corsHeaders) {
-  const HETZNER = (env && env.HETZNER_SERVER)
-    ? env.HETZNER_SERVER.replace(/\/$/, '')
-    : 'http://178.156.190.229:8000';
-  try {
-    const backendOk = await (async () => {
-      try {
-        const r = await fetch(`${HETZNER}/health`, { signal: AbortSignal.timeout(3000) });
-        return r.ok;
-      } catch (_) { return false; }
-    })();
-
-    return successResponse({
-      status: 'online',
-      service: 'FWEA-I Final Clean Audio Editor',
-      version: '1.0.0-final',
-      timestamp: new Date().toISOString(),
-      backend_reachable: backendOk,
-      features: {
-        real_audio_processing: true,
-        stripe_payments: true,
-        lyrics_extraction: true,
-        stem_separation: true,
-        profanity_detection: 'advanced',
-        subscription_tiers: ['single', 'day', 'monthly']
-      },
-      stripe_integration: 'active',
-      hetzner_backend: backendOk ? 'connected' : 'unreachable'
-    }, corsHeaders);
-  } catch (error) {
-    return errorResponse('Health check failed', 500, corsHeaders);
+async function pollStatus(sessionId) {
+  let done = false, tries = 0;
+  while (!done && tries < 180) {
+    await new Promise(r => setTimeout(r, 1000));
+    const r = await fetch(`${CONFIG.workerUrl}/status?session=${encodeURIComponent(sessionId)}`);
+    const j = await r.json();
+    if (j.success && (j.status === 'completed' || j.processingResult)) {
+      setProgress(100, 'Completed');
+      appState.processingData = j.processingResult || j.processing || null;
+      showResults(j);
+      done = true;
+      break;
+    } else {
+      tries++;
+      setProgress(Math.min(95, 30 + tries / 2), 'Processing...');
+    }
+  }
+  if (!done) {
+    showModal('Timeout', 'Processing is taking longer than expected. You can wait a bit and refresh status.');
+    showSection('results'); // allow user to try again or pay later
   }
 }
 
-// Utility functions
-async function handleFinalUpload(request, env, corsHeaders) {
+// -------------------- UI Helpers --------------------
+
+function setProgress(pct, text) {
+  if (elements.progressFill) elements.progressFill.style.width = `${pct}%`;
+  if (elements.progressText) elements.progressText.textContent = text || '';
+}
+
+function showSection(name) {
+  appState.currentSection = name;
+  const map = {
+    upload: [elements.uploadSection],
+    processing: [elements.processingSection],
+    results: [elements.resultsSection, elements.paymentSection],
+    download: [elements.downloadSection]
+  };
+  [elements.uploadSection, elements.processingSection, elements.resultsSection, elements.paymentSection, elements.downloadSection]
+    .forEach(el => el?.classList.add('hidden'));
+  (map[name] || []).forEach(el => el?.classList.remove('hidden'));
+}
+
+function showResults(j) {
+  // reveal results + payment
+  elements.resultsSection?.classList.remove('hidden');
+  elements.paymentSection?.classList.remove('hidden');
+
+  // Stats
+  const detected = j.processingResult?.profanity_detection?.total_detected
+                ?? j.processing?.detectedWords
+                ?? 0;
+  const acc = j.processingResult?.cleaning_results?.cleaning_accuracy
+           ?? j.processing?.cleaningAccuracy
+           ?? 0;
+  const ptime = j.processingResult?.processing_time
+             ?? j.processing?.processingTime
+             ?? 0;
+
+  if (elements.wordsDetected) elements.wordsDetected.textContent = detected;
+  if (elements.cleaningAccuracy) {
+    const percent = acc > 1 ? Math.round(acc) : Math.round(acc * 100);
+    elements.cleaningAccuracy.textContent = `${percent}%`;
+  }
+  if (elements.processingTime) elements.processingTime.textContent = `${Math.round(ptime)}s`;
+
+  // Preview
+  if (elements.audioPreview && appState.sessionId) {
+    elements.audioPreview.src = `${CONFIG.workerUrl}/preview?session=${encodeURIComponent(appState.sessionId)}`;
+  }
+}
+
+// -------------------- Payments --------------------
+
+// We don’t use Stripe.js here; Worker returns a Checkout URL and we redirect.
+async function handlePayment(e) {
+  e.preventDefault();
+  const btn = e.currentTarget;
+  const plan = btn.getAttribute('data-plan') || btn.dataset.plan || btn.parentElement.getAttribute('data-plan');
+
+  if (!appState.sessionId) {
+    showModal('Upload Required', 'Please upload and process an audio file before purchasing.');
+    return;
+  }
+
   try {
-    const formData = await request.formData();
-    const audioFile = formData.get('audio');
+    btn.disabled = true;
+    btn.textContent = 'Preparing Checkout...';
 
-    if (!audioFile) {
-      return errorResponse('No audio file provided', 400, corsHeaders);
-    }
-
-    const validFormats = ['mp3', 'wav', 'm4a', 'aac', 'flac', 'ogg'];
-    const fileName = audioFile.name || 'unknown.mp3';
-    const fileExtension = fileName.split('.').pop()?.toLowerCase();
-    const fileSize = audioFile.size;
-
-    if (!fileExtension || !validFormats.includes(fileExtension)) {
-      return errorResponse(`Unsupported format: ${fileExtension}`, 400, corsHeaders);
-    }
-
-    if (fileSize > 104857600) {
-      return errorResponse('File too large. Maximum: 100MB', 413, corsHeaders);
-    }
-
-    const sessionId = 'fwea_final_' + crypto.randomUUID();
-
-    const audioBuffer = await audioFile.arrayBuffer();
-    await env.AUDIO_FILES.put(`${sessionId}/original.${fileExtension}`, audioBuffer, {
-      httpMetadata: { contentType: audioFile.type || 'audio/mpeg' },
-      customMetadata: {
-        originalName: fileName,
-        fileSize: fileSize.toString(),
-        format: fileExtension,
-        uploadTime: new Date().toISOString()
-      }
+    const res = await fetch(`${CONFIG.workerUrl}/create-payment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId: appState.sessionId, plan })
     });
 
-    const sessionData = {
-      sessionId,
-      fileName,
-      fileSize,
-      format: fileExtension,
-      status: 'uploaded',
-      uploadedAt: new Date().toISOString()
-    };
+    const data = await res.json();
+    if (!res.ok || !data.success || !data.checkoutUrl) {
+      throw new Error(data.error || 'Unable to create payment session');
+    }
 
-    await env.AUDIO_SESSIONS.put(sessionId, JSON.stringify(sessionData));
-
-    return successResponse({
-      sessionId,
-      fileName,
-      fileSize,
-      format: fileExtension,
-      message: 'Upload successful - ready for processing'
-    }, corsHeaders);
-
-  } catch (error) {
-    return errorResponse(`Upload failed: ${error.message}`, 500, corsHeaders);
+    window.location.assign(data.checkoutUrl);
+  } catch (err) {
+    console.error('Payment error:', err);
+    showModal('Payment Error', `Payment failed: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = `Choose ${plan === 'single' ? 'Single Song' : plan === 'day' ? 'Day Pass' : 'Monthly Pro'}`;
   }
 }
 
-async function handleStatus(request, env, corsHeaders) {
-  const url = new URL(request.url);
-  const sessionId = url.searchParams.get('session');
-
-  if (!sessionId) {
-    return errorResponse('Session ID required', 400, corsHeaders);
-  }
-
-  const sessionData = await getSessionData(env, sessionId);
-  if (!sessionData) {
-    return errorResponse('Session not found', 404, corsHeaders);
-  }
-
-  return successResponse({
-    sessionId,
-    status: sessionData.status || 'unknown',
-    paymentStatus: sessionData.paymentStatus || 'pending',
-    plan: sessionData.plan || null,
-    fileName: sessionData.fileName,
-    uploadedAt: sessionData.uploadedAt,
-    completedAt: sessionData.completedAt || null,
-    processingResult: sessionData.processingResult || null
-  }, corsHeaders);
-}
-
-async function handlePreview(request, env, corsHeaders) {
-  const HETZNER = (env && env.HETZNER_SERVER)
-    ? env.HETZNER_SERVER.replace(/\/$/, '')
-    : 'http://178.156.190.229:8000';
-  const url = new URL(request.url);
-  const sessionId = url.searchParams.get('session');
-
-  if (!sessionId) {
-    return errorResponse('Session ID required', 400, corsHeaders);
-  }
-
-  // 1) Try R2 first
-  const r2Object = await env.AUDIO_FILES.get(`${sessionId}/preview.mp3`);
-  if (r2Object) {
-    return new Response(r2Object.body, {
-      headers: { ...corsHeaders, 'Content-Type': 'audio/mpeg', 'Content-Disposition': 'inline' }
-    });
-  }
-
-  // 2) Proxy from Hetzner backend if R2 miss
-  const candidates = [
-    `${HETZNER}/preview?session=${encodeURIComponent(sessionId)}`,
-    `${HETZNER}/download/preview?session=${encodeURIComponent(sessionId)}`
-  ];
-
-  for (const u of candidates) {
+function checkStripeReturn() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('success') === 'true') {
     try {
-      const res = await fetch(u);
-      if (res.ok) {
-        return new Response(res.body, {
-          headers: {
-            ...corsHeaders,
-            'Content-Type': res.headers.get('content-type') || 'audio/mpeg',
-            'Content-Disposition': 'inline'
-          }
-        });
-      }
+      elements.resultsSection?.classList.remove('hidden');
+      elements.paymentSection?.classList.add('hidden');
+      elements.downloadSection?.classList.remove('hidden');
     } catch (_) {}
   }
-
-  // 3) Fallback
-  return new Response('Preview unavailable', {
-    headers: { ...corsHeaders, 'Content-Type': 'text/plain' },
-    status: 404
-  });
 }
 
-async function getSessionData(env, sessionId) {
+// -------------------- Downloads --------------------
+
+async function handleDownload(type) {
+  if (!appState.sessionId) {
+    showModal('Missing Session', 'Please upload and process a file first.');
+    return;
+  }
+
   try {
-    const data = await env.AUDIO_SESSIONS.get(sessionId);
-    return data ? JSON.parse(data) : null;
-  } catch (error) {
-    console.error('Error getting session data:', error);
-    return null;
+    let url;
+    if (type === 'lyrics') {
+      url = `${CONFIG.workerUrl}/download-lyrics?session=${encodeURIComponent(appState.sessionId)}`;
+    } else {
+      url = `${CONFIG.workerUrl}/download?session=${encodeURIComponent(appState.sessionId)}&type=${encodeURIComponent(type)}`;
+    }
+
+    // Start download via navigating the browser to the download URL
+    window.location.assign(url);
+  } catch (err) {
+    console.error('Download error:', err);
+    showModal('Download Error', err.message || 'Unable to download this file.');
   }
 }
 
-function getDownloadFileName(sessionData, type) {
-  switch (type) {
-    case 'vocals': return `vocals.${sessionData.format}`;
-    case 'instrumental': return `instrumental.${sessionData.format}`;
-    case 'clean':
-    default: return `clean_final.${sessionData.format}`;
+// -------------------- Misc Helpers --------------------
+
+function handleURLParameters() {
+  const params = new URLSearchParams(window.location.search);
+  const sid = params.get('fwea_session') || params.get('session');
+  if (sid) {
+    appState.sessionId = sid;
+    // Optionally poll instantly when a session is provided in the URL
+    // pollStatus(sid).catch(() => {});
   }
 }
 
-function successResponse(data, corsHeaders) {
-  return new Response(JSON.stringify({
-    success: true,
-    ...data,
-    timestamp: new Date().toISOString()
-  }), {
-    status: 200,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-  });
+function showModal(title, message) {
+  if (!elements.modal) { alert(message); return; }
+  elements.modalTitle.textContent = title;
+  elements.modalMessage.textContent = message;
+  elements.modal.classList.remove('hidden');
+}
+function hideModal() {
+  elements.modal?.classList.add('hidden');
 }
 
-function errorResponse(message, status, corsHeaders) {
-  return new Response(JSON.stringify({
-    success: false,
-    error: message,
-    timestamp: new Date().toISOString()
-  }), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-  });
+function resetApp() {
+  appState = {
+    currentSection: 'upload',
+    sessionId: null,
+    audioFile: null,
+    processingData: null,
+    userPlan: null
+  };
+  elements.fileInput.value = '';
+  showSection('upload');
+  elements.audioPreview && (elements.audioPreview.src = '');
+  setProgress(0, 'Initializing...');
+}
+
+// Optional: footer status (if your HTML has a <footer>)
+async function pingHealthFooter() {
+  try {
+    const footer = document.querySelector('footer');
+    if (!footer) return;
+    const r = await fetch(`${CONFIG.workerUrl}/health`);
+    const j = await r.json();
+    footer.innerHTML = `© 2025 FWEA-I Precision Audio Processing. All rights reserved.<br/>Server Status: <span style="color:${j.backend_reachable?'#4ADE80':'#EF4444'}">${j.backend_reachable?'Online':'Offline'}</span>`;
+  } catch (_) {}
 }
