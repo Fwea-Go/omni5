@@ -738,31 +738,34 @@ select.form-control {
 }
 
 /* END PERPLEXITY DESIGN SYSTEM */
-/* Enhanced Dark Theme Styles with Ultra-Precision Features */
+/* FWEA-I Surgical Clean Version Editor - Enhanced Styles */
+
+/* Surgical precision theme overrides */
 :root {
-  /* Custom theme overrides for precision design */
-  --theme-primary: #00F5D4;
-  --theme-secondary: #00B4D8;
-  --theme-background: #1a1a1a;
-  --theme-surface: #2a2a2a;
-  --theme-accent: #FF6B9D;
-  --theme-success: #4ADE80;
-  --theme-warning: #F59E0B;
-  --theme-error: #EF4444;
-  --theme-text: #ffffff;
-  --theme-text-secondary: #a0a0a0;
-  --theme-vocal: #FF6B9D;
-  --theme-instrumental: #4ADE80;
-  --theme-echo: #F59E0B;
-  --theme-precision: #8B5CF6;
+  /* Enhanced surgical theme colors */
+  --surgical-primary: #00F5D4;
+  --surgical-secondary: #00B4D8;
+  --surgical-accent: #FF6B9D;
+  --surgical-success: #4ADE80;
+  --surgical-warning: #F59E0B;
+  --surgical-error: #EF4444;
+  --surgical-precision: #00E5FF;
   
-  /* Animation variables */
-  --glow-duration: 2s;
-  --pulse-duration: 1.5s;
-  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Enhanced background layers */
+  --surgical-bg-primary: #1a1a1a;
+  --surgical-bg-secondary: #2a2a2a;
+  --surgical-bg-tertiary: #3a3a3a;
+  
+  /* Surgical precision indicators */
+  --precision-glow: 0 0 20px var(--surgical-precision);
+  --surgical-shadow: 0 0 30px rgba(0, 245, 212, 0.3);
+  
+  /* Animation timing for surgical precision */
+  --surgical-timing: cubic-bezier(0.25, 0.8, 0.25, 1);
+  --precision-duration: 0.3s;
 }
 
-/* Particle Background Animation */
+/* Enhanced particle system */
 .particles-container {
   position: fixed;
   top: 0;
@@ -776,121 +779,129 @@ select.form-control {
 
 .particle {
   position: absolute;
-  width: 4px;
-  height: 4px;
-  background: var(--theme-primary);
+  width: 3px;
+  height: 3px;
+  background: var(--surgical-primary);
   border-radius: 50%;
-  opacity: 0.3;
-  animation: float 6s infinite ease-in-out;
+  opacity: 0.4;
+  animation: surgicalFloat 8s infinite ease-in-out;
+  box-shadow: 0 0 6px var(--surgical-primary);
 }
 
-.particle:nth-child(1) {
-  left: 20%;
-  animation-delay: 0s;
-  animation-duration: 6s;
-}
+.particle:nth-child(1) { left: 15%; animation-delay: 0s; }
+.particle:nth-child(2) { left: 35%; animation-delay: 2s; }
+.particle:nth-child(3) { left: 55%; animation-delay: 4s; }
+.particle:nth-child(4) { left: 75%; animation-delay: 1s; }
+.particle:nth-child(5) { left: 85%; animation-delay: 3s; }
 
-.particle:nth-child(2) {
-  left: 40%;
-  animation-delay: 2s;
-  animation-duration: 8s;
-}
-
-.particle:nth-child(3) {
-  left: 60%;
-  animation-delay: 4s;
-  animation-duration: 7s;
-}
-
-.particle:nth-child(4) {
-  left: 80%;
-  animation-delay: 1s;
-  animation-duration: 9s;
-}
-
-.particle:nth-child(5) {
-  left: 90%;
-  animation-delay: 3s;
-  animation-duration: 5s;
-}
-
-@keyframes float {
+@keyframes surgicalFloat {
   0%, 100% {
     transform: translateY(100vh) scale(0);
     opacity: 0;
   }
   10% {
-    opacity: 0.3;
+    opacity: 0.4;
     transform: scale(1);
   }
   90% {
-    opacity: 0.3;
+    opacity: 0.4;
     transform: scale(1);
   }
 }
 
-/* Application-specific styles */
+/* Application container with surgical precision theme */
 .app-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--theme-background) 0%, var(--theme-surface) 100%);
+  background: linear-gradient(135deg, var(--surgical-bg-primary) 0%, var(--surgical-bg-secondary) 100%);
   display: flex;
   flex-direction: column;
   position: relative;
   z-index: 1;
 }
 
+/* Enhanced header with surgical branding */
 .app-header {
   text-align: center;
   padding: var(--space-32) var(--space-16);
-  border-bottom: 1px solid rgba(0, 245, 212, 0.2);
-  background: rgba(26, 26, 26, 0.9);
-  backdrop-filter: blur(10px);
+  border-bottom: 2px solid rgba(0, 245, 212, 0.3);
+  background: rgba(26, 26, 26, 0.95);
+  backdrop-filter: blur(15px);
+  position: relative;
 }
 
 .app-title {
   font-size: var(--font-size-4xl);
   font-weight: var(--font-weight-bold);
-  color: var(--theme-primary);
-  text-shadow: 0 0 30px rgba(0, 245, 212, 0.6);
-  margin-bottom: var(--space-8);
+  color: var(--surgical-primary);
+  text-shadow: var(--precision-glow);
+  margin-bottom: var(--space-12);
   letter-spacing: var(--letter-spacing-tight);
-  animation: titleGlow var(--glow-duration) ease-in-out infinite alternate;
+  animation: surgicalPulse 3s ease-in-out infinite alternate;
 }
 
-@keyframes titleGlow {
+@keyframes surgicalPulse {
   from {
-    text-shadow: 0 0 20px rgba(0, 245, 212, 0.4);
+    text-shadow: 0 0 20px rgba(0, 245, 212, 0.5);
   }
   to {
-    text-shadow: 0 0 40px rgba(0, 245, 212, 0.8);
+    text-shadow: 0 0 40px rgba(0, 245, 212, 0.8), 0 0 60px rgba(0, 245, 212, 0.4);
   }
 }
 
 .app-subtitle {
-  color: var(--theme-text-secondary);
+  color: var(--color-text-secondary);
   font-size: var(--font-size-lg);
-  margin: 0;
+  margin: 0 0 var(--space-20) 0;
+}
+
+.precision-indicator {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-16);
+  margin-top: var(--space-16);
+  flex-wrap: wrap;
+}
+
+.precision-badge,
+.preservation-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-8) var(--space-16);
+  background: rgba(0, 245, 212, 0.1);
+  border: 1px solid rgba(0, 245, 212, 0.3);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--surgical-primary);
+  backdrop-filter: blur(10px);
+}
+
+.preservation-badge {
+  background: rgba(74, 222, 128, 0.1);
+  border-color: rgba(74, 222, 128, 0.3);
+  color: var(--surgical-success);
 }
 
 .app-main {
   flex: 1;
-  max-width: 900px;
+  max-width: 1000px;
   margin: 0 auto;
   padding: var(--space-32) var(--space-16);
   width: 100%;
 }
 
-/* Enhanced Upload Section */
+/* Enhanced upload section with surgical theme */
 .upload-section {
   margin-bottom: var(--space-32);
 }
 
 .drop-zone {
-  border: 2px dashed rgba(0, 245, 212, 0.4);
+  border: 3px dashed rgba(0, 245, 212, 0.4);
   border-radius: var(--radius-lg);
   padding: var(--space-32);
   text-align: center;
-  transition: var(--transition-smooth);
+  transition: all var(--precision-duration) var(--surgical-timing);
   background: rgba(0, 245, 212, 0.05);
   cursor: pointer;
   position: relative;
@@ -904,9 +915,9 @@ select.form-control {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(0, 245, 212, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(0, 245, 212, 0.15) 0%, transparent 70%);
   transform: scale(0);
-  transition: transform 0.6s ease;
+  transition: transform 0.6s var(--surgical-timing);
   pointer-events: none;
 }
 
@@ -917,9 +928,9 @@ select.form-control {
 
 .drop-zone:hover,
 .drop-zone.drag-over {
-  border-color: rgba(0, 245, 212, 0.8);
+  border-color: var(--surgical-primary);
   background: rgba(0, 245, 212, 0.1);
-  box-shadow: 0 0 40px rgba(0, 245, 212, 0.4), inset 0 0 40px rgba(0, 245, 212, 0.1);
+  box-shadow: var(--surgical-shadow), inset 0 0 30px rgba(0, 245, 212, 0.1);
   transform: translateY(-4px);
 }
 
@@ -929,8 +940,8 @@ select.form-control {
 }
 
 .drop-zone-content h3 {
-  color: var(--theme-primary);
-  margin-bottom: var(--space-16);
+  color: var(--surgical-primary);
+  margin-bottom: var(--space-20);
   font-size: var(--font-size-2xl);
 }
 
@@ -942,102 +953,85 @@ select.form-control {
 }
 
 .upload-icon.pulse {
-  animation: pulse var(--pulse-duration) ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 0.8;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 1;
-  }
-}
-
-.format-indicators {
-  display: flex;
-  justify-content: center;
-  gap: var(--space-8);
-  margin-top: var(--space-16);
-  flex-wrap: wrap;
-}
-
-.format {
-  background: rgba(0, 245, 212, 0.1);
-  border: 1px solid rgba(0, 245, 212, 0.3);
-  padding: var(--space-4) var(--space-8);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-xs);
-  color: var(--theme-primary);
-  font-weight: var(--font-weight-medium);
+  animation: surgicalPulse 2s ease-in-out infinite;
 }
 
 .browse-btn {
   background: none;
   border: none;
-  color: var(--theme-primary);
+  color: var(--surgical-primary);
   text-decoration: underline;
   cursor: pointer;
   font-size: inherit;
   font-family: inherit;
-  padding: var(--space-4) var(--space-8);
+  padding: var(--space-6) var(--space-12);
   border-radius: var(--radius-sm);
-  transition: var(--transition-smooth);
+  transition: all var(--precision-duration) var(--surgical-timing);
   position: relative;
 }
 
 .browse-btn:hover {
-  color: var(--theme-secondary);
+  color: var(--surgical-secondary);
   background: rgba(0, 245, 212, 0.1);
-  text-shadow: 0 0 10px rgba(0, 245, 212, 0.5);
+  text-shadow: var(--precision-glow);
+  transform: scale(1.05);
 }
 
-.browse-btn:focus {
-  outline: 2px solid var(--theme-primary);
-  outline-offset: 2px;
+.surgical-features {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-20);
+  margin-top: var(--space-24);
+  flex-wrap: wrap;
 }
 
-/* Enhanced Upload Progress */
-.upload-progress {
-  background: var(--theme-surface);
+.feature {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-8) var(--space-12);
+  background: rgba(0, 245, 212, 0.05);
   border: 1px solid rgba(0, 245, 212, 0.2);
-  border-radius: var(--radius-lg);
-  padding: var(--space-20);
-  margin-top: var(--space-16);
-  box-shadow: 0 0 20px rgba(0, 245, 212, 0.1);
+  border-radius: var(--radius-base);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
 }
 
-.progress-info {
+.feature-icon {
+  font-size: var(--font-size-lg);
+}
+
+/* Enhanced progress section */
+.upload-progress {
+  background: var(--color-surface);
+  border: 2px solid rgba(0, 245, 212, 0.3);
+  border-radius: var(--radius-lg);
+  padding: var(--space-24);
+  margin-top: var(--space-20);
+  box-shadow: var(--surgical-shadow);
+}
+
+.progress-header {
+  margin-bottom: var(--space-16);
+}
+
+.progress-header h4 {
+  color: var(--surgical-primary);
+  margin-bottom: var(--space-8);
+  font-size: var(--font-size-xl);
+}
+
+.file-info {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: var(--space-12);
+  align-items: center;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
 }
 
 .file-name {
   font-weight: var(--font-weight-semibold);
-  color: var(--theme-text);
-  font-size: var(--font-size-lg);
-}
-
-.file-details {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: var(--space-4);
-  font-size: var(--font-size-sm);
-}
-
-.file-size {
-  color: var(--theme-text-secondary);
-}
-
-.upload-speed,
-.eta {
-  color: var(--theme-primary);
-  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
 }
 
 .progress-bar {
@@ -1051,10 +1045,10 @@ select.form-control {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--theme-primary), var(--theme-secondary));
+  background: linear-gradient(90deg, var(--surgical-primary), var(--surgical-secondary));
   width: 0%;
   transition: width 0.3s ease;
-  box-shadow: 0 0 20px rgba(0, 245, 212, 0.6);
+  box-shadow: 0 0 15px rgba(0, 245, 212, 0.6);
   position: relative;
 }
 
@@ -1065,7 +1059,7 @@ select.form-control {
   right: 0;
   width: 20px;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3));
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4));
   animation: shimmer 1.5s infinite;
 }
 
@@ -1077,31 +1071,31 @@ select.form-control {
 .progress-text {
   text-align: center;
   font-weight: var(--font-weight-bold);
-  color: var(--theme-primary);
+  color: var(--surgical-primary);
   font-size: var(--font-size-lg);
 }
 
-/* Enhanced Processing Section with Precision Features */
+/* Enhanced processing section with surgical steps */
 .processing-section {
-  background: var(--theme-surface);
-  border: 1px solid rgba(0, 245, 212, 0.2);
+  background: var(--color-surface);
+  border: 2px solid rgba(0, 245, 212, 0.3);
   border-radius: var(--radius-lg);
   padding: var(--space-32);
   margin-bottom: var(--space-32);
-  box-shadow: 0 0 30px rgba(0, 245, 212, 0.1);
+  box-shadow: var(--surgical-shadow);
 }
 
-.processing-status h3 {
+.surgical-status h3 {
   text-align: center;
   margin-bottom: var(--space-32);
-  color: var(--theme-primary);
+  color: var(--surgical-primary);
   font-size: var(--font-size-2xl);
 }
 
 .processing-ring {
   position: relative;
-  width: 120px;
-  height: 120px;
+  width: 140px;
+  height: 140px;
   margin: 0 auto var(--space-24) auto;
 }
 
@@ -1109,19 +1103,19 @@ select.form-control {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: conic-gradient(var(--theme-primary) 0deg, rgba(0, 245, 212, 0.1) 0deg);
+  background: conic-gradient(var(--surgical-primary) 0deg, rgba(0, 245, 212, 0.1) 0deg);
   position: relative;
-  animation: spin 2s linear infinite;
+  animation: surgicalSpin 3s linear infinite;
 }
 
 .ring-progress::before {
   content: '';
   position: absolute;
-  top: 10px;
-  left: 10px;
-  right: 10px;
-  bottom: 10px;
-  background: var(--theme-surface);
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  background: var(--color-surface);
   border-radius: 50%;
 }
 
@@ -1132,23 +1126,23 @@ select.form-control {
   transform: translate(-50%, -50%);
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
-  color: var(--theme-primary);
+  color: var(--surgical-primary);
   z-index: 1;
 }
 
-@keyframes spin {
+@keyframes surgicalSpin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
 .eta-display {
   text-align: center;
-  color: var(--theme-text-secondary);
-  margin-bottom: var(--space-24);
-  font-size: var(--font-size-md);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-32);
+  font-size: var(--font-size-lg);
 }
 
-.status-steps {
+.surgical-steps {
   display: grid;
   gap: var(--space-16);
   margin-bottom: var(--space-32);
@@ -1157,191 +1151,195 @@ select.form-control {
 .step {
   display: flex;
   align-items: center;
-  gap: var(--space-12);
-  padding: var(--space-16);
+  gap: var(--space-16);
+  padding: var(--space-20);
   border-radius: var(--radius-base);
   background: rgba(0, 245, 212, 0.05);
-  border: 1px solid rgba(0, 245, 212, 0.1);
+  border: 2px solid rgba(0, 245, 212, 0.1);
   opacity: 0.4;
-  transition: var(--transition-smooth);
+  transition: all var(--precision-duration) var(--surgical-timing);
 }
 
 .step.active {
   opacity: 1;
   background: rgba(0, 245, 212, 0.1);
   border-color: rgba(0, 245, 212, 0.4);
-  box-shadow: 0 0 25px rgba(0, 245, 212, 0.3);
-  transform: translateX(10px);
+  box-shadow: var(--surgical-shadow);
+  transform: translateX(8px);
 }
 
 .step.completed {
   opacity: 0.7;
-  background: rgba(0, 245, 212, 0.05);
-  border-color: rgba(0, 245, 212, 0.2);
+  background: rgba(74, 222, 128, 0.05);
+  border-color: rgba(74, 222, 128, 0.3);
 }
 
 .step-icon {
-  font-size: var(--font-size-xl);
-  width: 32px;
-  text-align: center;
+  font-size: var(--font-size-2xl);
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 245, 212, 0.1);
+  border-radius: var(--radius-base);
+  flex-shrink: 0;
 }
 
 .step.active .step-icon {
-  animation: pulse var(--pulse-duration) infinite;
+  animation: surgicalPulse 2s infinite;
+  background: rgba(0, 245, 212, 0.2);
 }
 
-.step-text {
-  font-weight: var(--font-weight-medium);
-  color: var(--theme-text);
+.step-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
 }
 
-/* Precision Features Section */
-.precision-features {
-  background: rgba(139, 92, 246, 0.05);
-  border: 1px solid rgba(139, 92, 246, 0.2);
+.step-title {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+}
+
+.step-desc {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.surgical-guarantee {
+  background: rgba(0, 245, 212, 0.03);
+  border: 1px solid rgba(0, 245, 212, 0.2);
   border-radius: var(--radius-base);
   padding: var(--space-20);
-  margin-top: var(--space-24);
+  display: grid;
+  gap: var(--space-16);
 }
 
-.precision-feature {
+.guarantee-item {
   display: flex;
   align-items: center;
   gap: var(--space-12);
-  margin-bottom: var(--space-16);
 }
 
-.precision-feature:last-child {
-  margin-bottom: 0;
-}
-
-.feature-icon {
+.guarantee-icon {
   width: 40px;
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(139, 92, 246, 0.2);
+  background: rgba(0, 245, 212, 0.1);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-lg);
+  flex-shrink: 0;
 }
 
-.feature-text {
+.guarantee-text {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
-.feature-text strong {
-  display: block;
-  color: var(--theme-precision);
-  margin-bottom: var(--space-4);
+.guarantee-text strong {
+  color: var(--surgical-primary);
   font-size: var(--font-size-base);
 }
 
-.feature-text span {
-  color: var(--theme-text-secondary);
+.guarantee-text span {
+  color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
 }
 
-/* Enhanced Transcription Preview with Precision Analysis */
-.transcription-preview {
+/* Enhanced vocal analysis preview */
+.vocal-analysis-preview {
   margin-top: var(--space-32);
   padding-top: var(--space-24);
-  border-top: 1px solid rgba(0, 245, 212, 0.2);
+  border-top: 2px solid rgba(0, 245, 212, 0.2);
 }
 
-.transcription-preview h4 {
-  color: var(--theme-primary);
+.vocal-analysis-preview h4 {
+  color: var(--surgical-primary);
   margin-bottom: var(--space-20);
   font-size: var(--font-size-xl);
 }
 
-.analysis-metrics {
+.analysis-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: var(--space-16);
-  margin-bottom: var(--space-24);
+  gap: var(--space-12);
+  margin-bottom: var(--space-20);
 }
 
-.metric {
-  background: rgba(0, 245, 212, 0.05);
-  border: 1px solid rgba(0, 245, 212, 0.1);
-  padding: var(--space-16);
-  border-radius: var(--radius-base);
+.stat {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: var(--space-12);
+  background: rgba(0, 245, 212, 0.05);
+  border-radius: var(--radius-base);
+  border: 1px solid rgba(0, 245, 212, 0.1);
 }
 
-.metric-label {
-  color: var(--theme-text-secondary);
+.label {
+  color: var(--color-text-secondary);
   font-weight: var(--font-weight-medium);
-  font-size: var(--font-size-sm);
 }
 
-.metric-value {
+.value {
+  color: var(--color-text);
+  font-weight: var(--font-weight-semibold);
+}
+
+.value-group {
   display: flex;
   align-items: center;
   gap: var(--space-8);
-  font-weight: var(--font-weight-semibold);
-  color: var(--theme-text);
 }
 
-.confidence-badge,
-.accuracy-badge {
-  background: var(--theme-primary);
-  color: var(--theme-background);
-  padding: var(--space-2) var(--space-6);
+.confidence {
+  background: var(--surgical-primary);
+  color: var(--surgical-bg-primary);
+  padding: var(--space-2) var(--space-8);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-bold);
 }
 
-.accuracy-badge {
-  background: var(--theme-precision);
+.explicit-count {
+  color: var(--surgical-error);
+}
+
+.preserved {
+  color: var(--surgical-success);
 }
 
 .transcript-container {
-  background: var(--theme-background);
-  border: 1px solid rgba(0, 245, 212, 0.2);
+  background: var(--surgical-bg-primary);
+  border: 2px solid rgba(0, 245, 212, 0.2);
   border-radius: var(--radius-base);
   overflow: hidden;
 }
 
 .transcript-header {
-  background: rgba(0, 245, 212, 0.05);
-  padding: var(--space-16);
-  border-bottom: 1px solid rgba(0, 245, 212, 0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: var(--space-12) var(--space-16);
+  background: rgba(0, 245, 212, 0.1);
+  border-bottom: 1px solid rgba(0, 245, 212, 0.2);
 }
 
 .transcript-header h5 {
+  color: var(--surgical-primary);
   margin: 0;
-  color: var(--theme-primary);
   font-size: var(--font-size-base);
 }
 
-.detection-legend {
-  display: flex;
-  gap: var(--space-12);
-  font-size: var(--font-size-xs);
-}
-
-.legend-item {
-  padding: var(--space-2) var(--space-6);
-  border-radius: var(--radius-sm);
-  font-weight: var(--font-weight-medium);
-}
-
-.legend-item.high-confidence {
-  background: rgba(139, 92, 246, 0.2);
-  color: var(--theme-precision);
-}
-
-.legend-item.processed {
-  background: rgba(239, 68, 68, 0.2);
-  color: var(--theme-error);
+.processing-indicator {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
 }
 
 .transcript-text {
@@ -1350,44 +1348,33 @@ select.form-control {
   font-size: var(--font-size-sm);
   max-height: 200px;
   overflow-y: auto;
-  line-height: 1.8;
+  line-height: 1.6;
   box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
 }
 
 .explicit-word {
   background: rgba(239, 68, 68, 0.2);
-  color: var(--theme-error);
+  color: var(--surgical-error);
   padding: var(--space-2) var(--space-6);
   border-radius: var(--radius-sm);
   font-weight: var(--font-weight-bold);
   border: 1px solid rgba(239, 68, 68, 0.4);
-  position: relative;
-  animation: highlight 0.5s ease;
+  animation: highlightExplicit 0.5s ease;
 }
 
-.precision-word {
-  background: rgba(139, 92, 246, 0.2);
-  color: var(--theme-precision);
-  padding: var(--space-2) var(--space-6);
-  border-radius: var(--radius-sm);
-  font-weight: var(--font-weight-bold);
-  border: 1px solid rgba(139, 92, 246, 0.4);
-  position: relative;
-}
-
-@keyframes highlight {
+@keyframes highlightExplicit {
   0% { background: rgba(239, 68, 68, 0.4); }
   100% { background: rgba(239, 68, 68, 0.2); }
 }
 
-/* Enhanced Preview Section with Precision Visualization */
+/* Enhanced preview section */
 .preview-section {
-  background: var(--theme-surface);
-  border: 1px solid rgba(0, 245, 212, 0.2);
+  background: var(--color-surface);
+  border: 2px solid rgba(0, 245, 212, 0.3);
   border-radius: var(--radius-lg);
   padding: var(--space-32);
   margin-bottom: var(--space-32);
-  box-shadow: 0 0 30px rgba(0, 245, 212, 0.1);
+  box-shadow: var(--surgical-shadow);
 }
 
 .preview-header {
@@ -1396,23 +1383,71 @@ select.form-control {
 }
 
 .preview-header h3 {
-  color: var(--theme-primary);
+  color: var(--surgical-primary);
   margin-bottom: var(--space-8);
   font-size: var(--font-size-2xl);
 }
 
-.audio-player {
-  background: var(--theme-background);
-  border-radius: var(--radius-base);
-  padding: var(--space-20);
-  margin-bottom: var(--space-24);
-  border: 1px solid rgba(0, 245, 212, 0.2);
+.surgical-summary {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-lg);
+  margin: 0;
 }
 
-.audio-player audio {
+.audio-preview-container {
+  margin-bottom: var(--space-32);
+}
+
+.track-selector {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-8);
+  margin-bottom: var(--space-20);
+  flex-wrap: wrap;
+}
+
+.track-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-8) var(--space-16);
+  background: rgba(0, 245, 212, 0.1);
+  border: 2px solid rgba(0, 245, 212, 0.2);
+  border-radius: var(--radius-base);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all var(--precision-duration) var(--surgical-timing);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.track-btn:hover {
+  background: rgba(0, 245, 212, 0.15);
+  border-color: rgba(0, 245, 212, 0.4);
+}
+
+.track-btn.active {
+  background: rgba(0, 245, 212, 0.2);
+  border-color: var(--surgical-primary);
+  color: var(--surgical-primary);
+  box-shadow: var(--surgical-shadow);
+}
+
+.track-icon {
+  font-size: var(--font-size-base);
+}
+
+.audio-player-enhanced {
+  background: var(--surgical-bg-primary);
+  border-radius: var(--radius-base);
+  padding: var(--space-20);
+  border: 2px solid rgba(0, 245, 212, 0.2);
+}
+
+.audio-player-enhanced audio {
   width: 100%;
   margin-bottom: var(--space-20);
-  filter: sepia(1) hue-rotate(140deg) saturate(2);
+  filter: sepia(100%) hue-rotate(140deg) saturate(2);
 }
 
 .waveform-container {
@@ -1425,22 +1460,14 @@ select.form-control {
   margin-bottom: var(--space-16);
 }
 
-.waveform {
+.track-layers {
   position: relative;
   height: 100%;
-  background: linear-gradient(90deg, 
-    rgba(0, 245, 212, 0.3) 0%,
-    rgba(0, 245, 212, 0.6) 20%,
-    rgba(0, 245, 212, 0.4) 40%,
-    rgba(0, 245, 212, 0.7) 60%,
-    rgba(0, 245, 212, 0.5) 80%,
-    rgba(0, 245, 212, 0.4) 100%
-  );
 }
 
-.vocal-track {
+.vocal-layer {
   position: absolute;
-  top: 10px;
+  top: 8px;
   left: 0;
   right: 0;
   height: 35px;
@@ -1454,9 +1481,9 @@ select.form-control {
   border-radius: var(--radius-sm);
 }
 
-.instrumental-track {
+.instrumental-layer {
   position: absolute;
-  bottom: 10px;
+  bottom: 8px;
   left: 0;
   right: 0;
   height: 35px;
@@ -1470,150 +1497,123 @@ select.form-control {
   border-radius: var(--radius-sm);
 }
 
-.precision-sections {
+.muted-regions {
   position: absolute;
-  top: 10px;
+  top: 8px;
   left: 0;
   right: 0;
   height: 35px;
 }
 
-.precision-section {
+.muted-region {
   position: absolute;
   top: 0;
   height: 100%;
-  background: rgba(139, 92, 246, 0.8);
+  background: rgba(239, 68, 68, 0.8);
   border-radius: var(--radius-sm);
-  border: 2px solid var(--theme-precision);
-  box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
-}
-
-.echo-fills {
-  position: absolute;
-  top: 10px;
-  left: 0;
-  right: 0;
-  height: 35px;
-}
-
-.echo-fill {
-  position: absolute;
-  top: 0;
-  height: 100%;
-  background: rgba(245, 158, 11, 0.7);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--theme-echo);
-  box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+  border: 2px solid var(--surgical-error);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
 }
 
 .playhead {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 2px;
+  width: 3px;
   background: #ffffff;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
   left: 0;
   transition: left 0.1s ease;
   z-index: 10;
 }
 
-.playback-info {
+.playback-controls {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-16);
-  font-family: var(--font-family-mono);
   font-size: var(--font-size-sm);
-  color: var(--theme-text-secondary);
 }
 
-.bpm-display {
-  color: var(--theme-primary);
-  font-weight: var(--font-weight-semibold);
-  background: rgba(0, 245, 212, 0.1);
-  padding: var(--space-4) var(--space-8);
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(0, 245, 212, 0.2);
+.time-display {
+  font-family: var(--font-family-mono);
+  color: var(--color-text-secondary);
 }
 
-.track-visualization {
+.surgical-indicators {
   display: flex;
-  gap: var(--space-16);
-  padding: var(--space-12);
-  background: rgba(0, 245, 212, 0.03);
-  border-radius: var(--radius-base);
-  flex-wrap: wrap;
+  gap: var(--space-12);
 }
 
-.track-indicator {
+.indicator {
   display: flex;
   align-items: center;
-  gap: var(--space-8);
-  font-size: var(--font-size-sm);
-  color: var(--theme-text-secondary);
+  gap: var(--space-4);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
 }
 
-.track-color {
-  width: 16px;
-  height: 16px;
+.vocal-indicator::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  background: var(--surgical-accent);
   border-radius: var(--radius-sm);
 }
 
-.vocal-color {
-  background: var(--theme-vocal);
+.instrumental-indicator::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  background: var(--surgical-success);
+  border-radius: var(--radius-sm);
 }
 
-.instrumental-color {
-  background: var(--theme-instrumental);
+.muted-indicator::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  background: var(--surgical-error);
+  border-radius: var(--radius-sm);
 }
 
-.precision-color {
-  background: var(--theme-precision);
-}
-
-.echo-color {
-  background: var(--theme-echo);
-}
-
-.precision-stats {
+.surgical-results {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--space-16);
   margin-bottom: var(--space-24);
 }
 
-.stat {
+.result-stat {
   text-align: center;
-  background: var(--theme-background);
+  background: var(--surgical-bg-primary);
   padding: var(--space-20);
   border-radius: var(--radius-base);
-  border: 1px solid rgba(0, 245, 212, 0.2);
-  transition: var(--transition-smooth);
+  border: 2px solid rgba(0, 245, 212, 0.2);
+  transition: all var(--precision-duration) var(--surgical-timing);
 }
 
-.stat:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(0, 245, 212, 0.2);
+.result-stat:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--surgical-shadow);
 }
 
 .stat-value {
   font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-bold);
-  color: var(--theme-primary);
+  color: var(--surgical-primary);
   margin-bottom: var(--space-8);
-  text-shadow: 0 0 10px rgba(0, 245, 212, 0.5);
+  text-shadow: var(--precision-glow);
 }
 
 .stat-label {
-  color: var(--theme-text-secondary);
+  color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
 }
 
 .preview-timeout {
   background: rgba(255, 107, 157, 0.1);
-  border: 1px solid rgba(255, 107, 157, 0.3);
+  border: 2px solid rgba(255, 107, 157, 0.3);
   border-radius: var(--radius-base);
   padding: var(--space-16);
   text-align: center;
@@ -1629,26 +1629,26 @@ select.form-control {
 
 .timeout-fill {
   height: 100%;
-  background: var(--theme-accent);
+  background: var(--surgical-accent);
   width: 100%;
   transition: width 1s linear;
   box-shadow: 0 0 10px rgba(255, 107, 157, 0.6);
 }
 
 .timeout-text {
-  color: var(--theme-accent);
+  color: var(--surgical-accent);
   font-weight: var(--font-weight-medium);
   margin: 0;
 }
 
-/* Enhanced Success Section */
+/* Enhanced success section */
 .success-section {
-  background: var(--theme-surface);
-  border: 1px solid rgba(0, 245, 212, 0.2);
+  background: var(--color-surface);
+  border: 2px solid rgba(0, 245, 212, 0.3);
   border-radius: var(--radius-lg);
   padding: var(--space-32);
   text-align: center;
-  box-shadow: 0 0 40px rgba(0, 245, 212, 0.2);
+  box-shadow: var(--surgical-shadow);
 }
 
 .success-animation {
@@ -1657,9 +1657,9 @@ select.form-control {
 }
 
 .success-icon {
-  font-size: 64px;
+  font-size: 72px;
   display: inline-block;
-  animation: bounce 0.6s ease;
+  animation: surgicalBounce 0.8s ease;
   position: relative;
   z-index: 1;
 }
@@ -1669,56 +1669,56 @@ select.form-control {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 120px;
-  height: 120px;
-  background: radial-gradient(circle, rgba(0, 245, 212, 0.3) 0%, transparent 70%);
+  width: 140px;
+  height: 140px;
+  background: radial-gradient(circle, rgba(0, 245, 212, 0.4) 0%, transparent 70%);
   border-radius: 50%;
-  animation: glow var(--glow-duration) ease-in-out infinite;
+  animation: surgicalGlow 2s ease-in-out infinite;
 }
 
-@keyframes bounce {
+@keyframes surgicalBounce {
   0%, 20%, 53%, 80%, 100% { transform: translate3d(0, 0, 0); }
   40%, 43% { transform: translate3d(0, -20px, 0); }
   70% { transform: translate3d(0, -10px, 0); }
   90% { transform: translate3d(0, -4px, 0); }
 }
 
-@keyframes glow {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
-  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.8; }
+@keyframes surgicalGlow {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.9; }
 }
 
 .success-content h3 {
-  color: var(--theme-success);
+  color: var(--surgical-success);
   margin-bottom: var(--space-16);
   font-size: var(--font-size-2xl);
 }
 
-.success-stats {
+.final-stats {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-20);
   margin: var(--space-24) 0;
 }
 
-.success-stat {
-  background: var(--theme-background);
+.final-stat {
+  background: var(--surgical-bg-primary);
   padding: var(--space-16);
   border-radius: var(--radius-base);
-  border: 1px solid rgba(0, 245, 212, 0.2);
+  border: 2px solid rgba(0, 245, 212, 0.2);
 }
 
 .stat-number {
   display: block;
   font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-bold);
-  color: var(--theme-primary);
+  color: var(--surgical-primary);
   margin-bottom: var(--space-4);
 }
 
 .stat-desc {
   font-size: var(--font-size-sm);
-  color: var(--theme-text-secondary);
+  color: var(--color-text-secondary);
 }
 
 .success-actions {
@@ -1732,7 +1732,7 @@ select.form-control {
   margin-top: var(--space-16);
 }
 
-/* Enhanced Buttons */
+/* Enhanced buttons with surgical precision */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -1744,7 +1744,7 @@ select.form-control {
   font-weight: var(--font-weight-semibold);
   line-height: 1.5;
   cursor: pointer;
-  transition: var(--transition-smooth);
+  transition: all var(--precision-duration) var(--surgical-timing);
   border: none;
   text-decoration: none;
   position: relative;
@@ -1772,30 +1772,30 @@ select.form-control {
 }
 
 .btn--primary {
-  background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
-  color: var(--theme-background);
-  box-shadow: 0 4px 15px rgba(0, 245, 212, 0.3);
+  background: linear-gradient(135deg, var(--surgical-primary), var(--surgical-secondary));
+  color: var(--surgical-bg-primary);
+  box-shadow: 0 4px 15px rgba(0, 245, 212, 0.4);
 }
 
 .btn--primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 245, 212, 0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 245, 212, 0.5);
 }
 
 .btn--primary.glow {
-  box-shadow: 0 0 20px rgba(0, 245, 212, 0.6);
-  animation: buttonGlow var(--glow-duration) ease-in-out infinite alternate;
+  box-shadow: var(--surgical-shadow);
+  animation: buttonGlow 2s ease-in-out infinite alternate;
 }
 
 @keyframes buttonGlow {
   from { box-shadow: 0 0 20px rgba(0, 245, 212, 0.6); }
-  to { box-shadow: 0 0 30px rgba(0, 245, 212, 0.8); }
+  to { box-shadow: 0 0 35px rgba(0, 245, 212, 0.9); }
 }
 
 .btn--secondary {
   background: rgba(0, 245, 212, 0.1);
-  color: var(--theme-text);
-  border: 1px solid rgba(0, 245, 212, 0.3);
+  color: var(--color-text);
+  border: 2px solid rgba(0, 245, 212, 0.3);
 }
 
 .btn--secondary:hover {
@@ -1806,12 +1806,12 @@ select.form-control {
 .btn--outline {
   background: transparent;
   border: 2px solid rgba(0, 245, 212, 0.5);
-  color: var(--theme-primary);
+  color: var(--surgical-primary);
 }
 
 .btn--outline:hover {
   background: rgba(0, 245, 212, 0.1);
-  border-color: var(--theme-primary);
+  border-color: var(--surgical-primary);
 }
 
 .btn--lg {
@@ -1830,32 +1830,32 @@ select.form-control {
   transform: none;
 }
 
-/* Error Section */
+/* Error section */
 .error-section {
-  background: var(--theme-surface);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--color-surface);
+  border: 2px solid rgba(239, 68, 68, 0.4);
   border-radius: var(--radius-lg);
   padding: var(--space-32);
   text-align: center;
-  box-shadow: 0 0 30px rgba(239, 68, 68, 0.2);
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
 }
 
 .error-content h3 {
-  color: var(--theme-error);
+  color: var(--surgical-error);
   margin: var(--space-16) 0;
   font-size: var(--font-size-2xl);
 }
 
 .error-icon {
-  font-size: 48px;
+  font-size: 56px;
   margin-bottom: var(--space-16);
-  animation: shake 0.5s ease-in-out;
+  animation: errorShake 0.6s ease-in-out;
 }
 
-@keyframes shake {
+@keyframes errorShake {
   0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
 }
 
 .error-actions {
@@ -1867,14 +1867,14 @@ select.form-control {
 
 /* Footer */
 .app-footer {
-  background: var(--theme-surface);
-  border-top: 1px solid rgba(0, 245, 212, 0.2);
+  background: var(--color-surface);
+  border-top: 2px solid rgba(0, 245, 212, 0.3);
   padding: var(--space-16);
   margin-top: auto;
 }
 
 .footer-content {
-  max-width: 900px;
+  max-width: 1000px;
   margin: 0 auto;
   display: flex;
   justify-content: space-between;
@@ -1883,7 +1883,7 @@ select.form-control {
 
 .footer-info p {
   margin: 0;
-  color: var(--theme-text-secondary);
+  color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
 }
 
@@ -1899,39 +1899,40 @@ select.form-control {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--theme-warning);
-  animation: pulse var(--pulse-duration) infinite;
-}
-
-.server-status.online::before {
-  background: var(--theme-success);
+  background: var(--surgical-success);
+  animation: statusPulse 2s infinite;
 }
 
 .server-status.offline::before {
-  background: var(--theme-error);
+  background: var(--surgical-error);
+}
+
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .admin-unlock {
   background: rgba(0, 245, 212, 0.1);
-  border: 1px solid rgba(0, 245, 212, 0.3);
-  color: var(--theme-text-secondary);
+  border: 2px solid rgba(0, 245, 212, 0.3);
+  color: var(--color-text-secondary);
   padding: var(--space-8) var(--space-12);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
   font-family: inherit;
   cursor: pointer;
-  transition: var(--transition-smooth);
-  opacity: 0.7;
+  transition: all var(--precision-duration) var(--surgical-timing);
+  opacity: 0.8;
 }
 
 .admin-unlock:hover {
   opacity: 1;
-  border-color: var(--theme-primary);
-  color: var(--theme-primary);
-  box-shadow: 0 0 15px rgba(0, 245, 212, 0.3);
+  border-color: var(--surgical-primary);
+  color: var(--surgical-primary);
+  box-shadow: var(--precision-glow);
 }
 
-/* Enhanced Modal Styles */
+/* Enhanced modals */
 .modal {
   position: fixed;
   top: 0;
@@ -1943,7 +1944,7 @@ select.form-control {
   align-items: center;
   justify-content: center;
   padding: var(--space-16);
-  animation: modalFadeIn 0.3s ease;
+  animation: modalFadeIn 0.4s ease;
 }
 
 @keyframes modalFadeIn {
@@ -1957,34 +1958,34 @@ select.form-control {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
 }
 
 .modal-content {
   position: relative;
-  background: var(--theme-surface);
+  background: var(--color-surface);
   border-radius: var(--radius-lg);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-  max-width: 700px;
+  box-shadow: var(--surgical-shadow);
+  max-width: 800px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  border: 1px solid rgba(0, 245, 212, 0.2);
-  animation: modalSlideIn 0.3s ease;
+  border: 2px solid rgba(0, 245, 212, 0.3);
+  animation: modalSlideIn 0.4s ease;
 }
 
 @keyframes modalSlideIn {
-  from { transform: translateY(-20px); opacity: 0; }
+  from { transform: translateY(-30px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 
 .modal-small {
-  max-width: 400px;
+  max-width: 450px;
 }
 
 .payment-modal {
-  max-width: 900px;
+  max-width: 1000px;
 }
 
 .modal-header {
@@ -1992,13 +1993,13 @@ select.form-control {
   justify-content: space-between;
   align-items: center;
   padding: var(--space-24);
-  border-bottom: 1px solid rgba(0, 245, 212, 0.2);
+  border-bottom: 2px solid rgba(0, 245, 212, 0.2);
 }
 
 .modal-header h2,
 .modal-header h3 {
   margin: 0;
-  color: var(--theme-primary);
+  color: var(--surgical-primary);
   font-size: var(--font-size-xl);
 }
 
@@ -2006,11 +2007,11 @@ select.form-control {
   background: none;
   border: none;
   font-size: var(--font-size-2xl);
-  color: var(--theme-text-secondary);
+  color: var(--color-text-secondary);
   cursor: pointer;
   padding: var(--space-8);
   border-radius: var(--radius-sm);
-  transition: var(--transition-smooth);
+  transition: all var(--precision-duration) var(--surgical-timing);
   width: 40px;
   height: 40px;
   display: flex;
@@ -2019,7 +2020,7 @@ select.form-control {
 }
 
 .modal-close:hover {
-  color: var(--theme-text);
+  color: var(--color-text);
   background: rgba(0, 245, 212, 0.1);
   transform: scale(1.1);
 }
@@ -2028,28 +2029,56 @@ select.form-control {
   padding: var(--space-24);
 }
 
-.payment-description {
-  text-align: center;
+.payment-feature-highlight {
+  background: rgba(0, 245, 212, 0.05);
+  border: 2px solid rgba(0, 245, 212, 0.2);
+  border-radius: var(--radius-base);
+  padding: var(--space-16);
   margin-bottom: var(--space-24);
-  color: var(--theme-text-secondary);
+}
+
+.feature-highlight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+}
+
+.highlight-icon {
+  font-size: var(--font-size-2xl);
+}
+
+.highlight-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.highlight-text strong {
+  color: var(--surgical-primary);
   font-size: var(--font-size-lg);
 }
 
-/* Enhanced Pricing Tiers */
+.highlight-text span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+/* Enhanced pricing tiers */
 .pricing-tiers {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: var(--space-20);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-24);
   margin-bottom: var(--space-24);
 }
 
 .tier {
-  background: var(--theme-background);
+  background: var(--surgical-bg-primary);
   border: 2px solid rgba(0, 245, 212, 0.2);
   border-radius: var(--radius-base);
   padding: var(--space-24);
   text-align: center;
-  transition: var(--transition-smooth);
+  transition: all var(--precision-duration) var(--surgical-timing);
   position: relative;
   overflow: hidden;
 }
@@ -2061,9 +2090,9 @@ select.form-control {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, var(--theme-primary), var(--theme-secondary));
+  background: linear-gradient(90deg, var(--surgical-primary), var(--surgical-secondary));
   transform: scaleX(0);
-  transition: transform 0.3s ease;
+  transition: transform var(--precision-duration) ease;
 }
 
 .tier:hover::before {
@@ -2071,24 +2100,24 @@ select.form-control {
 }
 
 .tier:hover {
-  border-color: var(--theme-primary);
-  box-shadow: 0 10px 30px rgba(0, 245, 212, 0.3);
-  transform: translateY(-5px);
+  border-color: var(--surgical-primary);
+  box-shadow: var(--surgical-shadow);
+  transform: translateY(-6px);
 }
 
 .tier.featured {
-  border-color: var(--theme-primary);
+  border-color: var(--surgical-primary);
   background: rgba(0, 245, 212, 0.05);
   transform: scale(1.05);
-  box-shadow: 0 10px 40px rgba(0, 245, 212, 0.4);
+  box-shadow: var(--surgical-shadow);
 }
 
 .tier-badge {
   position: absolute;
   top: var(--space-12);
   right: var(--space-12);
-  background: var(--theme-primary);
-  color: var(--theme-background);
+  background: var(--surgical-primary);
+  color: var(--surgical-bg-primary);
   padding: var(--space-4) var(--space-8);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);
@@ -2101,20 +2130,20 @@ select.form-control {
 
 .tier h3 {
   margin: 0 0 var(--space-12) 0;
-  color: var(--theme-text);
+  color: var(--color-text);
   font-size: var(--font-size-xl);
 }
 
 .price {
   font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-bold);
-  color: var(--theme-primary);
+  color: var(--surgical-primary);
   margin-bottom: var(--space-4);
-  text-shadow: 0 0 10px rgba(0, 245, 212, 0.5);
+  text-shadow: var(--precision-glow);
 }
 
 .tier small {
-  color: var(--theme-text-secondary);
+  color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
 }
 
@@ -2125,7 +2154,7 @@ select.form-control {
 
 .tier-features p {
   margin: var(--space-8) 0;
-  color: var(--theme-text-secondary);
+  color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
 }
 
@@ -2136,12 +2165,12 @@ select.form-control {
 .payment-security {
   text-align: center;
   padding-top: var(--space-16);
-  border-top: 1px solid rgba(0, 245, 212, 0.2);
+  border-top: 2px solid rgba(0, 245, 212, 0.2);
 }
 
 .payment-security p {
   margin: 0;
-  color: var(--theme-text-secondary);
+  color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
 }
 
@@ -2151,46 +2180,46 @@ select.form-control {
 }
 
 .admin-features small {
-  color: var(--theme-text-secondary);
+  color: var(--color-text-secondary);
   font-style: italic;
 }
 
-/* Payment Processing */
+/* Payment processing */
 .payment-spinner {
   margin-bottom: var(--space-20);
 }
 
 .spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(0, 245, 212, 0.3);
-  border-top: 3px solid var(--theme-primary);
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(0, 245, 212, 0.3);
+  border-top: 4px solid var(--surgical-primary);
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: surgicalSpin 1s linear infinite;
   margin: 0 auto;
+}
+
+.payment-progress {
+  margin-top: var(--space-16);
+  text-align: left;
+}
+
+.progress-step {
+  padding: var(--space-4) 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  opacity: 0.5;
+  transition: all var(--precision-duration) ease;
+}
+
+.progress-step.active {
+  color: var(--surgical-primary);
+  opacity: 1;
+  font-weight: var(--font-weight-semibold);
 }
 
 .text-center {
   text-align: center;
-}
-
-/* Skeleton Loader */
-.skeleton-loader {
-  padding: var(--space-24);
-}
-
-.skeleton-item {
-  height: 20px;
-  background: linear-gradient(90deg, rgba(0, 245, 212, 0.1) 25%, rgba(0, 245, 212, 0.2) 50%, rgba(0, 245, 212, 0.1) 75%);
-  background-size: 200% 100%;
-  animation: skeletonShimmer 1.5s infinite;
-  border-radius: var(--radius-sm);
-  margin-bottom: var(--space-12);
-}
-
-@keyframes skeletonShimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
 }
 
 /* Utility classes */
@@ -2198,7 +2227,7 @@ select.form-control {
   display: none !important;
 }
 
-/* Responsive Design */
+/* Responsive design */
 @media (max-width: 768px) {
   .app-title {
     font-size: var(--font-size-3xl);
@@ -2216,6 +2245,11 @@ select.form-control {
     font-size: 48px;
   }
   
+  .surgical-features {
+    flex-direction: column;
+    gap: var(--space-12);
+  }
+  
   .footer-content {
     flex-direction: column;
     gap: var(--space-12);
@@ -2226,11 +2260,11 @@ select.form-control {
     grid-template-columns: 1fr;
   }
   
-  .precision-stats {
+  .surgical-results {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .success-stats {
+  .final-stats {
     grid-template-columns: 1fr;
   }
 
@@ -2252,20 +2286,16 @@ select.form-control {
     height: 100px;
   }
 
-  .format-indicators {
-    gap: var(--space-4);
+  .step {
+    padding: var(--space-16);
   }
 
-  .file-details {
-    align-items: flex-start;
-  }
-
-  .progress-info {
+  .precision-indicator {
     flex-direction: column;
     gap: var(--space-8);
   }
 
-  .track-visualization {
+  .track-selector {
     flex-direction: column;
     gap: var(--space-8);
   }
@@ -2274,24 +2304,15 @@ select.form-control {
     height: 100px;
   }
 
-  .vocal-track, .instrumental-track, .precision-sections, .echo-fills {
+  .vocal-layer, .instrumental-layer, .muted-regions {
     height: 30px;
   }
 
-  .vocal-track {
-    top: 8px;
+  .vocal-layer {
+    top: 6px;
   }
 
-  .instrumental-track {
-    bottom: 8px;
-  }
-
-  .analysis-metrics {
-    grid-template-columns: 1fr;
-  }
-
-  .playback-info {
-    flex-wrap: wrap;
-    gap: var(--space-8);
+  .instrumental-layer {
+    bottom: 6px;
   }
 }
