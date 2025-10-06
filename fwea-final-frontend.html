@@ -781,9 +781,10 @@
 
         // Initialize app
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Initializing FWEA-I Final Clean Audio Editor...');
-            setupEventListeners();
-            handleURLParameters();
+        console.log('🚀 Initializing FWEA-I Final Clean Audio Editor...');
+        setupEventListeners();
+        handleURLParameters();
+        checkStripeReturn();
         });
 
         function setupEventListeners() {
@@ -979,38 +980,40 @@
         }
 
         async function handlePayment(e) {
-            const plan = e.target.dataset.plan;
-            if (!plan || !appState.sessionId) return;
+  e.preventDefault();
+  const btn = e.currentTarget;
+  const plan = btn.getAttribute('data-plan') || btn.dataset.plan || btn.parentElement.getAttribute('data-plan');
 
-            try {
-                e.target.disabled = true;
-                e.target.textContent = 'Processing...';
+  if (!appState.sessionId) {
+    showModal('Upload Required', 'Please upload and process an audio file before purchasing.');
+    return;
+  }
 
-                const response = await fetch(`${CONFIG.workerUrl}/create-payment`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        sessionId: appState.sessionId,
-                        plan: plan
-                    })
-                });
+  try {
+    btn.disabled = true;
+    btn.textContent = 'Preparing Checkout...';
 
-                const result = await response.json();
+    const res = await fetch(`${CONFIG.workerUrl}/create-payment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId: appState.sessionId, plan })
+    });
 
-                if (!result.success) {
-                    throw new Error(result.error || 'Payment creation failed');
-                }
+    const data = await res.json();
+    if (!res.ok || !data.success || !data.checkoutUrl) {
+      throw new Error(data.error || 'Unable to create payment session');
+    }
 
-                // Redirect to Stripe checkout
-                window.location.href = result.checkoutUrl;
-
-            } catch (error) {
-                console.error('Payment error:', error);
-                showModal('Payment Error', error.message || 'Payment processing failed');
-                e.target.disabled = false;
-                e.target.textContent = e.target.dataset.originalText || 'Choose Plan';
-            }
-        }
+    // Redirect directly to Stripe Checkout URL returned by the Worker
+    window.location.assign(data.checkoutUrl);
+  } catch (err) {
+    console.error('Payment error:', err);
+    showModal('Payment Error', `Payment failed: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = `Choose ${plan === 'single' ? 'Single Song' : plan === 'day' ? 'Day Pass' : 'Monthly Pro'}`;
+  }
+}
 
         async function handleDownload(type) {
             if (!appState.sessionId) return;
@@ -1117,6 +1120,17 @@
             }
         }
 
+            function checkStripeReturn() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('success') === 'true') {
+    try {
+      if (elements.resultsSection) elements.resultsSection.classList.remove('hidden');
+      if (elements.paymentSection) elements.paymentSection.classList.add('hidden');
+      if (elements.downloadSection) elements.downloadSection.classList.remove('hidden');
+    } catch (_) {}
+  }
+}
+
         function showModal(title, message) {
             elements.modalTitle.textContent = title;
             elements.modalMessage.textContent = message;
@@ -1146,6 +1160,7 @@
         }
 
         console.log('✅ FWEA-I Final Clean Audio Editor loaded successfully!');
+
     </script>
 </body>
 </html>
