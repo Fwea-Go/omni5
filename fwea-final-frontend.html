@@ -781,12 +781,53 @@
 
         // Initialize app
         document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 Initializing FWEA-I Final Clean Audio Editor...');
-        setupEventListeners();
-        handleURLParameters();
-        checkStripeReturn();
+          // Ensure the first screen is the Upload section
+          forceInitialState();
+          console.log('🚀 Initializing FWEA-I Final Clean Audio Editor...');
+          setupEventListeners();
+          handleURLParameters();
+          checkStripeReturn();
         });
 
+        function forceInitialState() {
+          try {
+            // Show only the Upload section on first paint
+            elements.uploadSection?.classList.remove('hidden');
+            elements.processingSection?.classList.add('hidden');
+            elements.resultsSection?.classList.add('hidden');
+            elements.paymentSection?.classList.add('hidden');
+            elements.downloadSection?.classList.add('hidden');
+
+            // Hide any stray modals/overlays that might be left over from prior flows
+            elements.modal?.classList.add('hidden');
+
+            // Proactively hide common payment overlays if they exist in this document
+            const rogueSelectors = [
+              '#paymentModal', '.payment-modal', '#processingPaymentModal', '.processing-payment-overlay',
+              '#paymentProcessing', '.paymentProcessing', '#processingOverlay', '.overlay-backdrop'
+            ];
+            rogueSelectors.forEach(sel => {
+              document.querySelectorAll(sel).forEach(el => {
+                el.classList.add('hidden');
+                el.setAttribute('aria-hidden', 'true');
+                el.style.display = 'none';
+              });
+            });
+
+            // If an element renders a message containing "Processing Payment" on initial load, hide it
+            document.querySelectorAll('[role="dialog"], .modal, .overlay, [data-modal]')
+              .forEach(el => {
+                const txt = (el.textContent || '').trim();
+                if (/processing\s+payment/i.test(txt)) {
+                  el.classList.add('hidden');
+                  el.setAttribute('aria-hidden', 'true');
+                  el.style.display = 'none';
+                }
+              });
+          } catch (_) {}
+        }
+
+        // File handling
         function setupEventListeners() {
             // Upload handlers
             elements.dropZone.addEventListener('click', () => elements.fileInput.click());
