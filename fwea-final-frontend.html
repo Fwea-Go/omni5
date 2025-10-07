@@ -837,8 +837,80 @@
 
         function suppressHostOverlays() {
           try {
+            const KILL_TEXT_RE = /(processing\s*payment|securely\s*process\s*your\s*payment|payment\s*processing)/i;
+            const SELECTORS = [
+              '[role="dialog"]', '.modal', '.overlay', '.lightbox', '.wix-overlay', '[data-modal]',
+              '#paymentProcessing', '#processingPaymentModal', '.processing-payment-overlay', '.payment-modal'
+            ];
+
             const kill = (root) => {
-              const candidates = root.querySelectorAll('[role="dialog"], .modal, .overlay, .lightbox, .wix-overlay, [data-modal], #paymentProcessing, #processingPaymentModal');
+              try {
+                // Hide obvious overlay containers
+                root.querySelectorAll(SELECTORS.join(',')).forEach((el) => {
+                  const txt = (el.textContent || '').toLowerCase();
+                  if (KILL_TEXT_RE.test(txt)) {
+                    el.classList.add('hidden');
+                    el.setAttribute('aria-hidden', 'true');
+                    el.style.display = 'none';
+                    el.style.pointerEvents = 'none';
+                  }
+                });
+
+                // Also hide any centered "dialog-like" element that looks like a processing overlay
+                root.querySelectorAll('*').forEach((el) => {
+                  if (!el || el.nodeType !== 1) return;
+                  const s = getComputedStyle(el);
+                  if ((s.position === 'fixed' || s.position === 'sticky') &&
+                      (parseInt(s.zIndex) > 1000) &&
+                      (s.top === '0px' || s.left === '0px' || s.right === '0px' || s.bottom === '0px')) {
+                    const txt = (el.textContent || '').toLowerCase();
+                    if (KILL_TEXT_RE.test(txt)) {
+                      el.classList.add('hidden');
+                      el.setAttribute('aria-hidden', 'true');
+                      el.style.display = 'none';
+                      el.style.pointerEvents = 'none';
+                    }
+                  }
+                });
+              } catch (_) {}
+            };
+
+            // 1) Run immediately on this document
+            kill(document);
+
+            // 2) Mutation observer to catch overlays injected later
+            const mo = new MutationObserver((muts) => {
+              for (const m of muts) {
+                if (m.addedNodes) {
+                  m.addedNodes.forEach((node) => {
+                    if (node && node.nodeType === 1) kill(node);
+                  });
+                }
+              }
+            });
+            mo.observe(document.documentElement, { childList: true, subtree: true });
+
+            // 3) Fire a short-lived interval for the first few seconds (race against host boot)
+            let ticks = 0;
+            const iv = setInterval(() => {
+              kill(document);
+              ticks += 1;
+              if (ticks > 12) clearInterval(iv); // ~6s at 500ms
+            }, 500);
+
+            // 4) Best effort: if same-origin, also clean overlays in parent; else, request via postMessage
+            try {
+              if (window.parent && window.parent !== window && window.parent.document) {
+                kill(window.parent.document);
+              } else {
+                window.parent?.postMessage({ type: 'FWEA_HIDE_PAYMENT_OVERLAYS' }, '*');
+              }
+            } catch (_) {
+              // Cross-origin: ask parent politely to hide overlays
+              try { window.parent?.postMessage({ type: 'FWEA_HIDE_PAYMENT_OVERLAYS' }, '*'); } catch (_) {}
+            }
+          } catch (_) {}
+        }
               candidates.forEach(el => {
                 const txt = (el.textContent || '').toLowerCase();
                 if (/(processing\s+payment|securely\s+process\s+your\s+payment|payment\s+processing)/i.test(txt)) {
