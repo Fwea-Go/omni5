@@ -48,6 +48,12 @@
             display: flex;
             flex-direction: column;
         }
+        /* Force app above any host overlays (Wix, lightboxes, etc.) */
+        .app-container { position: relative; z-index: 2147483647; }
+        /* Try catch-all for generic full-screen overlays inside this document */
+        [role="dialog"], .lightbox, .overlay, .wix-overlay, .processing-payment-overlay, #paymentProcessing, #processingPaymentModal {
+            pointer-events: none !important;
+        }
 
         /* Header */
         .header {
@@ -781,6 +787,8 @@
 
         // Initialize app
         document.addEventListener('DOMContentLoaded', function() {
+          // Hide any host-provided payment overlays immediately
+          suppressHostOverlays();
           // Ensure the first screen is the Upload section
           forceInitialState();
           console.log('🚀 Initializing FWEA-I Final Clean Audio Editor...');
@@ -824,6 +832,42 @@
                   el.style.display = 'none';
                 }
               });
+          } catch (_) {}
+        }
+
+        function suppressHostOverlays() {
+          try {
+            const kill = (root) => {
+              const candidates = root.querySelectorAll('[role="dialog"], .modal, .overlay, .lightbox, .wix-overlay, [data-modal], #paymentProcessing, #processingPaymentModal');
+              candidates.forEach(el => {
+                const txt = (el.textContent || '').toLowerCase();
+                if (/(processing\s+payment|securely\s+process\s+your\s+payment|payment\s+processing)/i.test(txt)) {
+                  el.classList.add('hidden');
+                  el.setAttribute('aria-hidden', 'true');
+                  el.style.display = 'none';
+                }
+              });
+            };
+
+            // Run once immediately on this document
+            kill(document);
+
+            // Observe DOM mutations to hide future overlays injected after load
+            const mo = new MutationObserver(muts => {
+              for (const m of muts) {
+                if (m.addedNodes) m.addedNodes.forEach(node => {
+                  if (node.nodeType === 1) {
+                    kill(node);
+                  }
+                });
+              }
+            });
+            mo.observe(document.documentElement, { childList: true, subtree: true });
+
+            // Politely ask parent to hide any host overlay, if allowed
+            try {
+              window.parent?.postMessage({ type: 'FWEA_HIDE_PAYMENT_OVERLAYS' }, '*');
+            } catch (_) {}
           } catch (_) {}
         }
 
