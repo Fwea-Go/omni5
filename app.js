@@ -1,12 +1,14 @@
-// app.js — FWEA-I Clean Audio Editor (externalized)
-// -------------------------------------------------
-// Assumes your HTML IDs/classes match the provided fwea-final-frontend.html
+// app.js — FWEA-I Clean Audio Editor (final)
+// -----------------------------------------
+// If you embed this in Wix, also add the parent listener snippet I gave you earlier
+// so the parent can hide its own payment overlay when we postMessage.
 
 console.log('🎯 FWEA-I Final Clean Audio Editor Loading...');
 
 const CONFIG = {
   workerUrl: 'https://omni-clean-5.fweago-flavaz.workers.dev',
-  stripePublishableKey: 'pk_live_51RW06LJ2Iq1764pCr02p7yLia0VqBgUcRfG7Qm5OWFNAwFZcexIs9iBB3B9s22elcQzQjuAUMBxpeUhwcm8hsDf900NbCbF3Vw'
+  stripePublishableKey:
+    'pk_live_51RW06LJ2Iq1764pCr02p7yLia0VqBgUcRfG7Qm5OWFNAwFZcexIs9iBB3B9s22elcQzQjuAUMBxpeUhwcm8hsDf900NbCbF3Vw'
 };
 
 let appState = {
@@ -17,7 +19,7 @@ let appState = {
   userPlan: null
 };
 
-// DOM Elements
+// --- DOM ---
 const elements = {
   // Sections
   uploadSection: document.getElementById('uploadSection'),
@@ -56,19 +58,142 @@ const elements = {
   modalClose: document.getElementById('modalClose')
 };
 
-// App init
-document.addEventListener('DOMContentLoaded', function() {
+// --- Boot ---
+document.addEventListener('DOMContentLoaded', function () {
+  // Ask the parent (Wix) to hide its overlays during boot
+  requestParentHideOverlays();
+  // Hide any in-frame overlays and force the first screen to Upload
+  suppressHostOverlays();
+  forceInitialState();
+
   console.log('🚀 Initializing FWEA-I Final Clean Audio Editor...');
   setupEventListeners();
   handleURLParameters();
-  checkStripeReturn();   // Reveal downloads after Stripe returns with ?success=true
-  pingHealthFooter();    // Optional: shows Online/Offline in footer if present
+  checkStripeReturn(); // if coming back from Stripe with ?success=true
+  pingHealthFooter();  // optional footer status if page has <footer>
 });
 
-// -------------------- Event Wiring --------------------
+// ---------- Overlay control (host/Wix) ----------
+
+function requestParentHideOverlays() {
+  try {
+    // Fire messages for ~6s to beat host overlay init
+    let ticks = 0;
+    const send = () => {
+      try {
+        window.parent?.postMessage({ type: 'FWEA_HIDE_PAYMENT_OVERLAYS' }, '*');
+      } catch (_) {}
+      if (++ticks > 12) clearInterval(iv);
+    };
+    send();
+    const iv = setInterval(send, 500);
+  } catch (_) {}
+}
+
+function suppressHostOverlays() {
+  try {
+    const KILL_TEXT_RE =
+      /(processing\s*payment|securely\s*process\s*your\s*payment|payment\s*processing)/i;
+    const SELECTORS = [
+      '[role="dialog"]',
+      '.modal',
+      '.overlay',
+      '.lightbox',
+      '.wix-overlay',
+      '[data-modal]',
+      '#paymentProcessing',
+      '#processingPaymentModal',
+      '.processing-payment-overlay',
+      '.payment-modal'
+    ];
+
+    const hideFrom = (root) => {
+      try {
+        // Target common overlay containers by selector + matching text
+        root.querySelectorAll(SELECTORS.join(',')).forEach((el) => {
+          const txt = (el.textContent || '').toLowerCase();
+          if (KILL_TEXT_RE.test(txt)) {
+            el.classList.add('hidden');
+            el.setAttribute('aria-hidden', 'true');
+            el.style.display = 'none';
+            el.style.pointerEvents = 'none';
+          }
+        });
+
+        // Catch-all for full-screen fixed overlays with matching text
+        root.querySelectorAll('*').forEach((el) => {
+          if (!el || el.nodeType !== 1) return;
+          const s = getComputedStyle(el);
+          if ((s.position === 'fixed' || s.position === 'sticky') && parseInt(s.zIndex) > 1000) {
+            const txt = (el.textContent || '').toLowerCase();
+            if (KILL_TEXT_RE.test(txt)) {
+              el.classList.add('hidden');
+              el.setAttribute('aria-hidden', 'true');
+              el.style.display = 'none';
+              el.style.pointerEvents = 'none';
+            }
+          }
+        });
+      } catch (_) {}
+    };
+
+    hideFrom(document);
+
+    // Watch for late-injected overlays
+    const mo = new MutationObserver((muts) => {
+      for (const m of muts) {
+        m.addedNodes?.forEach((node) => {
+          if (node && node.nodeType === 1) hideFrom(node);
+        });
+      }
+    });
+    mo.observe(document.documentElement, { childList: true, subtree: true });
+
+    // Same-origin parent clean (best-effort)
+    try {
+      if (window.parent && window.parent !== window && window.parent.document) {
+        hideFrom(window.parent.document);
+      }
+    } catch (_) {}
+  } catch (_) {}
+}
+
+function forceInitialState() {
+  try {
+    // Show Upload, hide others
+    elements.uploadSection?.classList.remove('hidden');
+    elements.processingSection?.classList.add('hidden');
+    elements.resultsSection?.classList.add('hidden');
+    elements.paymentSection?.classList.add('hidden');
+    elements.downloadSection?.classList.add('hidden');
+
+    // Hide our modal if leftover
+    elements.modal?.classList.add('hidden');
+
+    // Kill obvious in-frame payment overlays by selector
+    [
+      '#paymentModal',
+      '.payment-modal',
+      '#processingPaymentModal',
+      '.processing-payment-overlay',
+      '#paymentProcessing',
+      '.paymentProcessing',
+      '#processingOverlay',
+      '.overlay-backdrop'
+    ].forEach((sel) => {
+      document.querySelectorAll(sel).forEach((el) => {
+        el.classList.add('hidden');
+        el.setAttribute('aria-hidden', 'true');
+        el.style.display = 'none';
+      });
+    });
+  } catch (_) {}
+}
+
+// ---------- Event wiring ----------
 
 function setupEventListeners() {
-  // Upload handlers
+  // Upload
   elements.dropZone.addEventListener('click', () => elements.fileInput.click());
   elements.browseBtn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -76,17 +201,17 @@ function setupEventListeners() {
   });
   elements.fileInput.addEventListener('change', handleFileSelect);
 
-  // Drag and drop
+  // Drag & drop
   elements.dropZone.addEventListener('dragover', handleDragOver);
   elements.dropZone.addEventListener('dragleave', handleDragLeave);
   elements.dropZone.addEventListener('drop', handleFileDrop);
 
-  // Payment buttons
-  document.querySelectorAll('.btn[data-plan]').forEach(btn => {
+  // Payments
+  document.querySelectorAll('.btn[data-plan]').forEach((btn) => {
     btn.addEventListener('click', handlePayment);
   });
 
-  // Download buttons (optional elements exist depending on plan)
+  // Downloads
   elements.downloadClean?.addEventListener('click', () => handleDownload('clean'));
   elements.downloadVocals?.addEventListener('click', () => handleDownload('vocals'));
   elements.downloadInstrumental?.addEventListener('click', () => handleDownload('instrumental'));
@@ -97,7 +222,7 @@ function setupEventListeners() {
   elements.modalClose?.addEventListener('click', () => hideModal());
 }
 
-// -------------------- File Handling --------------------
+// ---------- File handling ----------
 
 function handleDragOver(e) {
   e.preventDefault();
@@ -136,7 +261,6 @@ async function processFile(file) {
 
     // Poll status
     await pollStatus(appState.sessionId);
-
   } catch (error) {
     console.error(error);
     showModal('Upload/Processing Error', error.message || 'Something went wrong during processing.');
@@ -164,9 +288,7 @@ async function uploadFile(file) {
   fd.append('audio', file);
   const res = await fetch(`${CONFIG.workerUrl}/upload`, { method: 'POST', body: fd });
   const data = await res.json();
-  if (!res.ok || !data.success) {
-    throw new Error(data.error || 'Upload failed');
-  }
+  if (!res.ok || !data.success) throw new Error(data.error || 'Upload failed');
   return data;
 }
 
@@ -181,9 +303,10 @@ async function startProcessing() {
 }
 
 async function pollStatus(sessionId) {
-  let done = false, tries = 0;
+  let done = false,
+    tries = 0;
   while (!done && tries < 180) {
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, 1000));
     const r = await fetch(`${CONFIG.workerUrl}/status?session=${encodeURIComponent(sessionId)}`);
     const j = await r.json();
     if (j.success && (j.status === 'completed' || j.processingResult)) {
@@ -199,11 +322,11 @@ async function pollStatus(sessionId) {
   }
   if (!done) {
     showModal('Timeout', 'Processing is taking longer than expected. You can wait a bit and refresh status.');
-    showSection('results'); // allow user to try again or pay later
+    showSection('results'); // allow user to see/pay later
   }
 }
 
-// -------------------- UI Helpers --------------------
+// ---------- UI helpers ----------
 
 function setProgress(pct, text) {
   if (elements.progressFill) elements.progressFill.style.width = `${pct}%`;
@@ -212,32 +335,37 @@ function setProgress(pct, text) {
 
 function showSection(name) {
   appState.currentSection = name;
+  const list = [
+    elements.uploadSection,
+    elements.processingSection,
+    elements.resultsSection,
+    elements.paymentSection,
+    elements.downloadSection
+  ];
+  list.forEach((el) => el?.classList.add('hidden'));
   const map = {
     upload: [elements.uploadSection],
     processing: [elements.processingSection],
     results: [elements.resultsSection, elements.paymentSection],
     download: [elements.downloadSection]
   };
-  [elements.uploadSection, elements.processingSection, elements.resultsSection, elements.paymentSection, elements.downloadSection]
-    .forEach(el => el?.classList.add('hidden'));
-  (map[name] || []).forEach(el => el?.classList.remove('hidden'));
+  (map[name] || []).forEach((el) => el?.classList.remove('hidden'));
 }
 
 function showResults(j) {
-  // reveal results + payment
   elements.resultsSection?.classList.remove('hidden');
   elements.paymentSection?.classList.remove('hidden');
 
-  // Stats
-  const detected = j.processingResult?.profanity_detection?.total_detected
-                ?? j.processing?.detectedWords
-                ?? 0;
-  const acc = j.processingResult?.cleaning_results?.cleaning_accuracy
-           ?? j.processing?.cleaningAccuracy
-           ?? 0;
-  const ptime = j.processingResult?.processing_time
-             ?? j.processing?.processingTime
-             ?? 0;
+  const detected =
+    j.processingResult?.profanity_detection?.total_detected ??
+    j.processing?.detectedWords ??
+    0;
+  const acc =
+    j.processingResult?.cleaning_results?.cleaning_accuracy ??
+    j.processing?.cleaningAccuracy ??
+    0;
+  const ptime =
+    j.processingResult?.processing_time ?? j.processing?.processingTime ?? 0;
 
   if (elements.wordsDetected) elements.wordsDetected.textContent = detected;
   if (elements.cleaningAccuracy) {
@@ -246,19 +374,50 @@ function showResults(j) {
   }
   if (elements.processingTime) elements.processingTime.textContent = `${Math.round(ptime)}s`;
 
-  // Preview
   if (elements.audioPreview && appState.sessionId) {
-    elements.audioPreview.src = `${CONFIG.workerUrl}/preview?session=${encodeURIComponent(appState.sessionId)}`;
+    elements.audioPreview.src = `${CONFIG.workerUrl}/preview?session=${encodeURIComponent(
+      appState.sessionId
+    )}`;
   }
 }
 
-// -------------------- Payments --------------------
+function showModal(title, message) {
+  if (!elements.modal) {
+    alert(message);
+    return;
+  }
+  elements.modalTitle.textContent = title;
+  elements.modalMessage.textContent = message;
+  elements.modal.classList.remove('hidden');
+}
+function hideModal() {
+  elements.modal?.classList.add('hidden');
+}
 
-// We don’t use Stripe.js here; Worker returns a Checkout URL and we redirect.
+function resetApp() {
+  appState = {
+    currentSection: 'upload',
+    sessionId: null,
+    audioFile: null,
+    processingData: null,
+    userPlan: null
+  };
+  if (elements.fileInput) elements.fileInput.value = '';
+  showSection('upload');
+  if (elements.audioPreview) elements.audioPreview.src = '';
+  setProgress(0, 'Initializing...');
+}
+
+// ---------- Payments ----------
+// We don’t use Stripe.js in the iframe; the Worker returns a Checkout URL and we redirect.
+
 async function handlePayment(e) {
   e.preventDefault();
   const btn = e.currentTarget;
-  const plan = btn.getAttribute('data-plan') || btn.dataset.plan || btn.parentElement.getAttribute('data-plan');
+  const plan =
+    btn.getAttribute('data-plan') ||
+    btn.dataset.plan ||
+    btn.parentElement.getAttribute('data-plan');
 
   if (!appState.sessionId) {
     showModal('Upload Required', 'Please upload and process an audio file before purchasing.');
@@ -286,7 +445,9 @@ async function handlePayment(e) {
     showModal('Payment Error', `Payment failed: ${err.message}`);
   } finally {
     btn.disabled = false;
-    btn.textContent = `Choose ${plan === 'single' ? 'Single Song' : plan === 'day' ? 'Day Pass' : 'Monthly Pro'}`;
+    btn.textContent = `Choose ${
+      plan === 'single' ? 'Single Song' : plan === 'day' ? 'Day Pass' : 'Monthly Pro'
+    }`;
   }
 }
 
@@ -301,7 +462,7 @@ function checkStripeReturn() {
   }
 }
 
-// -------------------- Downloads --------------------
+// ---------- Downloads ----------
 
 async function handleDownload(type) {
   if (!appState.sessionId) {
@@ -314,10 +475,10 @@ async function handleDownload(type) {
     if (type === 'lyrics') {
       url = `${CONFIG.workerUrl}/download-lyrics?session=${encodeURIComponent(appState.sessionId)}`;
     } else {
-      url = `${CONFIG.workerUrl}/download?session=${encodeURIComponent(appState.sessionId)}&type=${encodeURIComponent(type)}`;
+      url = `${CONFIG.workerUrl}/download?session=${encodeURIComponent(
+        appState.sessionId
+      )}&type=${encodeURIComponent(type)}`;
     }
-
-    // Start download via navigating the browser to the download URL
     window.location.assign(url);
   } catch (err) {
     console.error('Download error:', err);
@@ -325,49 +486,26 @@ async function handleDownload(type) {
   }
 }
 
-// -------------------- Misc Helpers --------------------
+// ---------- Misc ----------
 
 function handleURLParameters() {
   const params = new URLSearchParams(window.location.search);
   const sid = params.get('fwea_session') || params.get('session');
   if (sid) {
     appState.sessionId = sid;
-    // Optionally poll instantly when a session is provided in the URL
+    // Optional: auto-poll if session is passed in
     // pollStatus(sid).catch(() => {});
   }
 }
 
-function showModal(title, message) {
-  if (!elements.modal) { alert(message); return; }
-  elements.modalTitle.textContent = title;
-  elements.modalMessage.textContent = message;
-  elements.modal.classList.remove('hidden');
-}
-function hideModal() {
-  elements.modal?.classList.add('hidden');
-}
-
-function resetApp() {
-  appState = {
-    currentSection: 'upload',
-    sessionId: null,
-    audioFile: null,
-    processingData: null,
-    userPlan: null
-  };
-  elements.fileInput.value = '';
-  showSection('upload');
-  elements.audioPreview && (elements.audioPreview.src = '');
-  setProgress(0, 'Initializing...');
-}
-
-// Optional: footer status (if your HTML has a <footer>)
 async function pingHealthFooter() {
   try {
     const footer = document.querySelector('footer');
     if (!footer) return;
     const r = await fetch(`${CONFIG.workerUrl}/health`);
     const j = await r.json();
-    footer.innerHTML = `© 2025 FWEA-I Precision Audio Processing. All rights reserved.<br/>Server Status: <span style="color:${j.backend_reachable?'#4ADE80':'#EF4444'}">${j.backend_reachable?'Online':'Offline'}</span>`;
+    footer.innerHTML = `© 2025 FWEA-I Precision Audio Processing. All rights reserved.<br/>Server Status: <span style="color:${
+      j.backend_reachable ? '#4ADE80' : '#EF4444'
+    }">${j.backend_reachable ? 'Online' : 'Offline'}</span>`;
   } catch (_) {}
 }
